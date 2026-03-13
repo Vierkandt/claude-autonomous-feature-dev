@@ -20,7 +20,7 @@
 3. **Verify** using the verify script. Run it in single-attempt mode first to see where things stand:
 
    ```bash
-   bash <skill-dir>/scripts/verify.sh "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LINT_CMD"
+   bash "$SKILL_DIR/scripts/verify.sh" "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LINT_CMD"
    ```
 
    If any step fails, read the error output, fix the code, and re-run. The script prints the last 20 lines of output for each failure to help diagnosis.
@@ -30,8 +30,10 @@
 5. **Commit** once verification passes (or after hitting the retry cap):
 
    ```bash
-   cd "$WORKTREE" && git add -A && git commit -m "feat: <one-line summary>"
+   cd "$WORKTREE" && git add -- <list every specific file you created or modified> && git commit -m "feat: <one-line summary>"
    ```
+
+   Never use `git add -A` or `git add .` — list paths explicitly to avoid accidentally committing temp files, generated artifacts, or sensitive files.
 
 ## Guidelines
 

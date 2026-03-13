@@ -22,7 +22,7 @@ case "$ACTION" in
 
     case "$PR_CLI" in
       gh)
-        if gh pr merge "$PR_NUMBER" $MERGE_STRATEGY --delete-branch 2>&1; then
+        if gh pr merge "$PR_NUMBER" "$MERGE_STRATEGY" --delete-branch 2>&1; then
           echo "MERGED: PR #${PR_NUMBER}"
           exit 0
         else
@@ -38,7 +38,7 @@ case "$ACTION" in
           --rebase) GLAB_FLAGS="$GLAB_FLAGS --rebase" ;;
           # --merge is glab's default
         esac
-        if glab mr merge "$PR_NUMBER" $GLAB_FLAGS 2>&1; then
+        if glab mr merge "$PR_NUMBER" $GLAB_FLAGS 2>&1; then  # GLAB_FLAGS is intentionally unquoted (multiple flags)
           echo "MERGED: MR !${PR_NUMBER}"
           exit 0
         else

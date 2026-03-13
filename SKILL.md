@@ -55,28 +55,34 @@ Read `docs/project-context.md` (or user-specified path) before anything else. Ex
 | `MERGE_STRATEGY` | Git / PR Conventions → merge strategy | `--squash` |
 | `PR_CLI` | Git / PR Conventions → hosting CLI | `gh` |
 
+The path to the context file itself is `$CONTEXT_FILE`, captured from `setup.sh` output. To use a non-default location, pass it as the second argument to `setup.sh` (see Phase 0).
+
 These variables are passed to scripts as arguments or environment variables.
 
 ---
 
 ## Phase 0 — Setup
 
-Run the setup script with the feature request as the argument:
+First, set `SKILL_DIR` to the absolute path of the directory containing this `SKILL.md` file.
+
+Run the setup script with the feature request as the argument. An alternate context file path may be passed as a second argument — omit it to use the default (`docs/project-context.md`):
 
 ```bash
-bash <skill-dir>/scripts/setup.sh "<feature request text>"
+bash "$SKILL_DIR/scripts/setup.sh" "<feature request text>" [optional-context-file-path]
 ```
 
-The script outputs four values. Capture them for all subsequent phases:
+The script outputs six values. Capture them all for subsequent phases:
 
 ```
 SLUG=...
 BRANCH=...
 WORKTREE=...
 PLAN_FILE=...
+SKILL_DIR=...       # confirms resolved skill directory
+CONTEXT_FILE=...    # path to the project context file
 ```
 
-Then read the project context file.
+Then read `$CONTEXT_FILE`.
 
 ## Phase 1 — Architecture
 
@@ -96,8 +102,20 @@ Read `references/phase-4-review-fix.md` and follow its instructions. Loops up to
 
 ## Phase 4.5 — Merge
 
+Before merging, delete the plan file so it does not appear in the squash commit:
+
 ```bash
-bash <skill-dir>/scripts/merge-cleanup.sh merge "$PR_NUMBER" "$PR_CLI" "$MERGE_STRATEGY"
+rm -f "$PLAN_FILE"
+rmdir "$WORKTREE/docs/plans" "$WORKTREE/docs" 2>/dev/null || true
+git -C "$WORKTREE" add -u
+git -C "$WORKTREE" commit -m "chore: remove implementation plan"
+git -C "$WORKTREE" push
+```
+
+Then merge:
+
+```bash
+bash "$SKILL_DIR/scripts/merge-cleanup.sh" merge "$PR_NUMBER" "$PR_CLI" "$MERGE_STRATEGY"
 ```
 
 - Exit code 0 → `merged = yes`
@@ -106,10 +124,28 @@ bash <skill-dir>/scripts/merge-cleanup.sh merge "$PR_NUMBER" "$PR_CLI" "$MERGE_S
 ## Phase 5 — Cleanup
 
 ```bash
-bash <skill-dir>/scripts/merge-cleanup.sh cleanup "$WORKTREE"
+bash "$SKILL_DIR/scripts/merge-cleanup.sh" cleanup "$WORKTREE"
 ```
 
 Always runs, regardless of merge outcome.
+
+---
+
+## Aborting & Recovery
+
+If the pipeline is interrupted at any phase, run cleanup manually to remove the worktree:
+
+```bash
+bash "$SKILL_DIR/scripts/merge-cleanup.sh" cleanup "$WORKTREE"
+```
+
+To list all active worktrees:
+
+```bash
+git worktree list
+```
+
+If `$WORKTREE` was never captured, re-run Phase 0 with the same feature request — `setup.sh` detects the existing worktree and branch and reuses them without creating duplicates.
 
 ---
 

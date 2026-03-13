@@ -11,7 +11,8 @@
 #
 # Exit codes:
 #   0  — all steps passed
-#   1  — one or more steps failed after retries
+#   1  — one or more steps failed after all retries exhausted
+#   2  — a step failed but retries remain — return control to agent to fix, then re-run
 #
 # Output: prints PASS/FAIL per step, and the failing command + output on failure.
 

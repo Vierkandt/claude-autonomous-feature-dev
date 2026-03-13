@@ -7,15 +7,18 @@
 ## Overview
 
 ```
+SUGGESTIONS = []
 iteration = 1
 while iteration <= 3:
     findings = review(PR)
     critical, important, suggestions = classify(findings)
+    SUGGESTIONS.extend(suggestions)
     if no critical and no important:
         break
     fix(critical + important)
     verify_and_commit()
     iteration += 1
+# Pass full SUGGESTIONS list to the final report
 ```
 
 After the loop, proceed to merge (Phase 4.5 in the orchestrator).
@@ -42,7 +45,7 @@ Every finding gets one severity:
 |---|---|---|
 | **critical** | Broken functionality, security vulnerability, data loss risk | Must fix |
 | **important** | Convention violation, performance concern, accessibility gap, missing test | Should fix |
-| **suggestion** | Style preference, minor improvement, "nice to have" | Report only — do NOT fix |
+| **suggestion** | Style preference, minor improvement, "nice to have" | Do NOT fix — append to `SUGGESTIONS` for the final report |
 
 ---
 
@@ -99,7 +102,7 @@ Rules:
 After all fixes are applied:
 
 ```bash
-bash <skill-dir>/scripts/verify.sh "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LINT_CMD"
+bash "$SKILL_DIR/scripts/verify.sh" "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LINT_CMD"
 ```
 
 If verification fails, fix the regression (cap: 3 attempts for this sub-step). Then:

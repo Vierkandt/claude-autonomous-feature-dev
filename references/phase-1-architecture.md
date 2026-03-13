@@ -15,7 +15,13 @@
    - Shared utilities, base components, or layout wrappers
    - Configuration files (build, framework, linting)
 
-4. **Write the plan** to `$WORKTREE/$PLAN_FILE` using the template below.
+4. **Write the plan** to `$PLAN_FILE` using the template below.
+
+5. **Commit the plan** so it is preserved if the session is interrupted before implementation begins:
+
+   ```bash
+   cd "$WORKTREE" && git add -- "$PLAN_FILE" && git commit -m "docs: add implementation plan"
+   ```
 
 ## Plan Template
 

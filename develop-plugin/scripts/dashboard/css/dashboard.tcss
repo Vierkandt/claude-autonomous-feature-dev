@@ -1,0 +1,40 @@
+/* Swarm Dashboard — Textual CSS */
+
+Screen {
+    background: $surface;
+}
+
+SwarmHeader {
+    height: auto;
+    margin: 0 0 1 0;
+}
+
+WavePanel {
+    height: auto;
+    margin: 0 0 0 0;
+}
+
+MergeQueueBar {
+    height: auto;
+    margin: 1 0 0 0;
+}
+
+DetailPanel {
+    width: 50;
+    height: 1fr;
+    dock: right;
+    display: none;
+}
+
+#wave-container {
+    height: 1fr;
+    overflow-y: auto;
+}
+
+#main-content {
+    height: 1fr;
+}
+
+Footer {
+    background: $primary-background;
+}

@@ -102,6 +102,8 @@ class SwarmDashboard(App):
         self._watcher_task: asyncio.Task | None = None
         self._use_watchfiles = False
         self._refresh_counter = 0
+        self._refresh_tick = 0
+        self._state_changed = False
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -117,6 +119,7 @@ class SwarmDashboard(App):
         """Initialize: read state and start file watcher."""
         self._refresh_state()
         self._start_watcher()
+        self.set_interval(1.0, self._tick_refresh_timer)
 
     def _start_watcher(self) -> None:
         """Start file watcher using watchfiles or polling fallback."""
@@ -145,13 +148,28 @@ class SwarmDashboard(App):
             # Fall back to polling on any error
             self.set_interval(5.0, self._refresh_state)
 
+    def _tick_refresh_timer(self) -> None:
+        self._refresh_tick = (self._refresh_tick + 1) % 5
+        try:
+            header = self.query_one("#swarm-header", SwarmHeader)
+            header.update_tick(self._refresh_tick, self._state_changed)
+            if self._refresh_tick == 0:
+                self._state_changed = False
+        except Exception:
+            pass
+
     def _refresh_state(self) -> None:
         """Re-read state files and update all widgets."""
+        old_hash = hash(str(self._state)) if self._state else None
         try:
             self._state = self.reader.read()
         except Exception:
             # Keep existing state on read error
             pass
+
+        new_hash = hash(str(self._state))
+        self._state_changed = old_hash != new_hash
+        self._refresh_tick = 0
 
         self._rebuild_workbranch_index()
         self._update_widgets()

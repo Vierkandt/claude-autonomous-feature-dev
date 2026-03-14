@@ -16,10 +16,17 @@ class SwarmHeader(Static):
     def __init__(self, state: SwarmState | None = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self._state = state or SwarmState()
+        self._tick = 0
+        self._last_state_changed = False
 
     def update_state(self, state: SwarmState) -> None:
         """Update with new state and re-render."""
         self._state = state
+        self.refresh()
+
+    def update_tick(self, tick: int, state_changed: bool) -> None:
+        self._tick = tick
+        self._last_state_changed = state_changed
         self.refresh()
 
     def render(self):
@@ -54,6 +61,19 @@ class SwarmHeader(Static):
         # Row 1: Platform name and status counts
         title = Text(f"\U0001f41d {s.platform_name}" if s.platform_name else "\U0001f41d Swarm Dashboard", style="bold white")
 
+        # Build refresh countdown bar
+        filled = self._tick
+        empty = 4 - self._tick
+        bar = Text()
+        bar.append("\u2593" * (filled + 1), style="cyan")
+        bar.append("\u2591" * empty, style="bright_black")
+
+        # Add status flash
+        if self._tick == 0 and self._last_state_changed:
+            bar.append(" \u2713 updated", style="green")
+        elif self._tick == 0:
+            bar.append(" \u00b7 no change", style="dim")
+
         status_text = Text()
         status_text.append(f"\u23f1 {elapsed}  ", style="dim")
         status_text.append(f"\u2713 {merged}", style="green")
@@ -61,6 +81,8 @@ class SwarmHeader(Static):
         status_text.append(f"  \u23f8 {blocked}", style="red")
         status_text.append(f"  \u2717 {failed}", style="red")
         status_text.append(f"  \u25cb {pending}", style="dim")
+        status_text.append("  ")
+        status_text.append_text(bar)
 
         t.add_row(title, status_text)
 

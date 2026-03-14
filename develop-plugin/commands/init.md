@@ -72,6 +72,34 @@ Report what was added or changed.
 
 ---
 
+## Step 3.5 — Create swarm directory structure
+
+Create the directories used by /plan, /import-plan, and /swarm:
+
+```bash
+mkdir -p docs/plans
+mkdir -p docs/workbranches
+mkdir -p docs/reports
+```
+
+These directories are safe to create unconditionally — `mkdir -p` is idempotent on existing directories.
+
+Then check whether `docs/` would be gitignored:
+
+```bash
+git check-ignore -q docs/ 2>/dev/null && echo "DOCS_IGNORED=yes" || echo "DOCS_IGNORED=no"
+```
+
+If `DOCS_IGNORED=yes`, warn the user:
+
+```
+Note: docs/ is gitignored. Plans, contracts, and reports written by /plan and /swarm
+will not be committed to the repository. If you want them tracked, remove docs/ from
+.gitignore or add an exception: !docs/plans/ !docs/reports/ !docs/project-contract.md
+```
+
+---
+
 ## Step 4 — Add context file path to .gitignore check
 
 Check if `.gitignore` exists. If it does, verify that `.claude/` is listed. If not, suggest adding it (but do NOT modify .gitignore without asking — the user may have their own preferences).
@@ -90,7 +118,9 @@ Autonomous Feature Developer — project initialized
 
 Next steps:
   1. Fill in docs/project-context.md with your project's stack, build commands, and conventions
-  2. Run: /auto-dev <feature description>
+  2a. Single feature:    /auto-dev <feature description>
+  2b. Full platform:     /plan   — brainstorm and structure a plan interactively
+                      →  /swarm docs/plans/<your-plan>.md   — build the platform
 ```
 
 If the context file was freshly created, emphasize that filling it in is required before `/auto-dev` will work.

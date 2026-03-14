@@ -1,9 +1,25 @@
 {
   "name": "develop-plugin",
-  "version": "1.0.0",
-  "description": "Autonomous feature developer skill — builds a feature from request to merged PR.",
+  "version": "2.0.0",
+  "description": "Autonomous feature developer and swarm orchestrator — builds features from request to merged PR, and orchestrates parallel agent swarms for full-platform development.",
   "author": {
     "name": "Vierkandt"
   },
-  "repository": "https://github.com/Vierkandt/claude-autonomous-feature-dev"
+  "repository": "https://github.com/Vierkandt/claude-autonomous-feature-dev",
+  "commands": [
+    "commands/init.md",
+    "commands/auto-dev.md",
+    "commands/plan.md",
+    "commands/import-plan.md",
+    "commands/swarm.md"
+  ],
+  "agents": [
+    "agents/swarm-orchestrator.md",
+    "agents/decomposer.md",
+    "agents/wave-transition.md"
+  ],
+  "skills": [
+    "skills/autonomous-feature-developer/SKILL.md",
+    "skills/integration-reviewer/SKILL.md"
+  ]
 }

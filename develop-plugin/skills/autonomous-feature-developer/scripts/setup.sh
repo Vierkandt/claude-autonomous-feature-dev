@@ -9,6 +9,7 @@ set -euo pipefail
 
 FEATURE_REQUEST="${1:?Usage: setup.sh \"<feature request text>\" [context-file-path]}"
 CONTEXT_FILE_ARG="${2:-}"
+CONTRACT_FILE_ARG="${3:-}"
 
 # Resolve skill directory from script location (used only for error messages)
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -48,6 +49,19 @@ if [ ! -f "$CONTEXT_FILE" ]; then
   exit 1
 fi
 
+# Validate contract file if specified (swarm context); non-fatal if not specified
+if [ -n "$CONTRACT_FILE_ARG" ]; then
+  if [ ! -f "$CONTRACT_FILE_ARG" ]; then
+    echo "ERROR: contract file not found: ${CONTRACT_FILE_ARG}" >&2
+    echo "  Run /plan or /import-plan to generate it." >&2
+    exit 1
+  fi
+  CONTRACT_FILE="$CONTRACT_FILE_ARG"
+else
+  # Default location — not validated (optional for standalone auto-dev)
+  CONTRACT_FILE="${REPO_ROOT}/docs/project-contract.md"
+fi
+
 # Idempotency: reuse existing worktree/branch if already created
 WORKTREE_EXISTS=false
 if git -C "$REPO_ROOT" worktree list --porcelain | grep -qF "worktree ${WORKTREE}"; then
@@ -73,3 +87,4 @@ echo "BRANCH=${BRANCH}"
 echo "WORKTREE=${WORKTREE}"
 echo "PLAN_FILE=${PLAN_FILE}"
 echo "CONTEXT_FILE=${CONTEXT_FILE}"
+echo "CONTRACT_FILE=${CONTRACT_FILE}"

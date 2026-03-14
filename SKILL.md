@@ -86,7 +86,7 @@ Then read `$CONTEXT_FILE`.
 
 ## Phase 1 — Architecture
 
-Read `references/phase-1-architecture.md` and follow its instructions. Produces a plan file at `$WORKTREE/$PLAN_FILE`. No source code changes.
+Read `references/phase-1-architecture.md` and follow its instructions. Produces a plan file at `$PLAN_FILE`. No source code changes.
 
 ## Phase 2 — Implementation
 

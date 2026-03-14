@@ -108,7 +108,7 @@ bash "$SKILL_DIR/scripts/verify.sh" "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LIN
 If verification fails, fix the regression (cap: 3 attempts for this sub-step). Then:
 
 ```bash
-cd "$WORKTREE" && git add -A && git commit -m "fix: address review findings (iteration $iteration)"
+cd "$WORKTREE" && git add -- <list every specific file changed during this fix round> && git commit -m "fix: address review findings (iteration $iteration)"
 cd "$WORKTREE" && git push
 ```
 

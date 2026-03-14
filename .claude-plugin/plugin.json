@@ -1,5 +1,8 @@
 {
   "name": "develop-plugin",
   "version": "1.0.0",
-  "description": "Autonomous feature developer skill — builds a feature from request to merged PR."
+  "description": "Autonomous feature developer skill — builds a feature from request to merged PR.",
+  "author": {
+    "name": "Vierkandt"
+  }
 }

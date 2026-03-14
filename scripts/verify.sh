@@ -24,6 +24,7 @@ BUILD_CMD="${3:?build-cmd is required}"
 TEST_CMD="${4:-}"
 LINT_CMD="${5:-}"
 
+[ -d "$WORKTREE" ] || { echo "ERROR: worktree not found: $WORKTREE" >&2; exit 1; }
 cd "$WORKTREE"
 
 run_step() {

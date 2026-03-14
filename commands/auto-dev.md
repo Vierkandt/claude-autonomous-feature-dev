@@ -1,6 +1,7 @@
 ---
 name: auto-dev
 description: Autonomously build a feature end-to-end — architecture, implementation, PR, review, and merge — without human hand-holding. Usage: /auto-dev <feature description>. Requires CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 and Bash(*) in permissions.
+argument-hint: "<feature description>"
 ---
 
 ## Step 1 — Verify required configuration

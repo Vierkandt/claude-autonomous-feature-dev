@@ -4,7 +4,7 @@
 
 ## Steps
 
-1. **Read the plan** (`$WORKTREE/$PLAN_FILE`) in full before writing any code.
+1. **Read the plan** (`$PLAN_FILE`) in full before writing any code.
 
 2. **Implement** every item in the plan's Implementation Order, following the coding conventions from the project context file.
 

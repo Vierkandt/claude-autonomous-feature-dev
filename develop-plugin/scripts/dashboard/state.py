@@ -55,6 +55,13 @@ class SwarmStateReader:
             if data:
                 done_data[slug] = data
 
+        progress_slugs = self._glob_slugs("*-progress.json", "-progress.json")
+        progress_data: dict[str, dict] = {}
+        for slug in progress_slugs:
+            data = self._read_json(self.wb_dir / f"{slug}-progress.json")
+            if data:
+                progress_data[slug] = data
+
         # 3. Read workbranch .md files
         wb_files = self._find_workbranch_md_files()
         wb_info: dict[str, dict] = {}
@@ -119,6 +126,7 @@ class SwarmStateReader:
                     phase1_reports,
                     phase1_resolutions,
                     done_data,
+                    progress_data,
                     wr,
                     state,
                     ws,
@@ -154,6 +162,7 @@ class SwarmStateReader:
         phase1_reports: set[str],
         phase1_resolutions: set[str],
         done_data: dict[str, dict],
+        progress_data: dict[str, dict],
         wave_result: dict,
         swarm: SwarmState,
         wave: WaveState,
@@ -233,6 +242,23 @@ class SwarmStateReader:
         else:
             wbs.phase = "\u2014"
             wbs.phase_detail = ""
+
+        # Merge progress heartbeat data (supplements, not replaces, existing data)
+        if slug in progress_data:
+            pd = progress_data[slug]
+            wbs.current_action = pd.get("current_action", "")
+            wbs.files_created = pd.get("files_created", [])
+            wbs.files_modified = pd.get("files_modified", [])
+            wbs.build_status = pd.get("build_status", "not_run")
+            wbs.test_status = pd.get("test_status", "not_run")
+            wbs.commits = pd.get("commits", 0)
+            wbs.last_update = pd.get("timestamp", "")
+            # Use sub-feature progress from heartbeat if available
+            sf_index = pd.get("sub_feature_index")
+            sf_total = pd.get("sub_feature_total")
+            if sf_index is not None and sf_total is not None:
+                wbs.sub_features_done = sf_index
+                wbs.sub_features_total = sf_total
 
         return wbs
 

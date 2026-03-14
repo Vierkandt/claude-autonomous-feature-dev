@@ -121,6 +121,8 @@ Next steps:
   2a. Single feature:    /auto-dev <feature description>
   2b. Full platform:     /plan   — brainstorm and structure a plan interactively
                       →  /swarm docs/plans/<your-plan>.md   — build the platform
+
+Optional: pip install textual watchfiles  (for real-time swarm dashboard)
 ```
 
 If the context file was freshly created, emphasize that filling it in is required before `/auto-dev` will work.

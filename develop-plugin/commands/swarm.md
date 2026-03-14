@@ -229,6 +229,15 @@ Wave 2 (2 workbranches, parallel):
 Total: 4 workbranches across 2 waves.
 ```
 
+Then print:
+
+```
+To monitor this swarm in real-time, open a second terminal and run:
+  python -m dashboard <PLAN_SLUG> --base-dir <PROJECT_ROOT>
+
+(Requires: pip install textual watchfiles)
+```
+
 ## Step 9 — Initialize swarm state
 
 If not resuming:

@@ -1,0 +1,13 @@
+{
+  "name": "claude-autonomous-feature-dev",
+  "owner": {
+    "name": "Vierkandt"
+  },
+  "plugins": [
+    {
+      "name": "develop-plugin",
+      "source": ".",
+      "description": "Autonomous feature developer — builds a feature from request to merged PR."
+    }
+  ]
+}

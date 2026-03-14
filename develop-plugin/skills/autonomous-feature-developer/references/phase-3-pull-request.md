@@ -41,7 +41,7 @@
 3. **Create the PR** using the script:
 
    ```bash
-   bash "$SKILL_DIR/scripts/create-pr.sh" \
+   bash "${CLAUDE_SKILL_DIR}/scripts/create-pr.sh" \
      "$WORKTREE" \
      "$BASE_BRANCH" \
      "$BRANCH" \

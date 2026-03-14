@@ -4,5 +4,6 @@
   "description": "Autonomous feature developer skill — builds a feature from request to merged PR.",
   "author": {
     "name": "Vierkandt"
-  }
+  },
+  "repository": "https://github.com/Vierkandt/claude-autonomous-feature-dev"
 }

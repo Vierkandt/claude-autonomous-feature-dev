@@ -102,7 +102,7 @@ Rules:
 After all fixes are applied:
 
 ```bash
-bash "$SKILL_DIR/scripts/verify.sh" "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LINT_CMD"
+bash "${CLAUDE_SKILL_DIR}/scripts/verify.sh" "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LINT_CMD"
 ```
 
 If verification fails, fix the regression (cap: 3 attempts for this sub-step). Then:

@@ -19,7 +19,7 @@ Builds a feature from request to merged PR in a single run.
 If the project doesn't have a context file yet, copy the template to get started:
 
 ```bash
-cp <skill-dir>/assets/project-context.template.md docs/project-context.md
+cp "${CLAUDE_SKILL_DIR}/assets/project-context.template.md" docs/project-context.md
 ```
 
 Then fill it in. The skill won't proceed without one.
@@ -38,7 +38,7 @@ Then fill it in. The skill won't proceed without one.
 | **4.5 — Merge** | Squash/rebase/merge the PR | *(inline below)* |
 | **5 — Cleanup** | Remove worktree | *(inline below)* |
 
-Read each reference file **at the start of that phase**, not all upfront.
+Read each reference file **at the start of that phase**, not all upfront. Reference file paths are relative to `${CLAUDE_SKILL_DIR}`.
 
 ---
 
@@ -63,22 +63,19 @@ These variables are passed to scripts as arguments or environment variables.
 
 ## Phase 0 — Setup
 
-First, set `SKILL_DIR` to the absolute path of the directory containing this `SKILL.md` file.
-
 Run the setup script with the feature request as the argument. An alternate context file path may be passed as a second argument — omit it to use the default (`docs/project-context.md`):
 
 ```bash
-bash "$SKILL_DIR/scripts/setup.sh" "<feature request text>" [optional-context-file-path]
+bash "${CLAUDE_SKILL_DIR}/scripts/setup.sh" "<feature request text>" [optional-context-file-path]
 ```
 
-The script outputs six values. Capture them all for subsequent phases:
+The script outputs five values. Capture them all for subsequent phases:
 
 ```
 SLUG=...
 BRANCH=...
 WORKTREE=...
 PLAN_FILE=...
-SKILL_DIR=...       # confirms resolved skill directory
 CONTEXT_FILE=...    # path to the project context file
 ```
 
@@ -86,19 +83,19 @@ Then read `$CONTEXT_FILE`.
 
 ## Phase 1 — Architecture
 
-Read `references/phase-1-architecture.md` and follow its instructions. Produces a plan file at `$PLAN_FILE`. No source code changes.
+Read `${CLAUDE_SKILL_DIR}/references/phase-1-architecture.md` and follow its instructions. Produces a plan file at `$PLAN_FILE`. No source code changes.
 
 ## Phase 2 — Implementation
 
-Read `references/phase-2-implementation.md` and follow its instructions. Uses `scripts/verify.sh` for build/test/lint with retry caps.
+Read `${CLAUDE_SKILL_DIR}/references/phase-2-implementation.md` and follow its instructions. Uses `scripts/verify.sh` for build/test/lint with retry caps.
 
 ## Phase 3 — Pull Request
 
-Read `references/phase-3-pull-request.md` and follow its instructions. Uses `scripts/create-pr.sh` for multi-platform PR creation. Capture `PR_NUMBER` and `PR_URL`.
+Read `${CLAUDE_SKILL_DIR}/references/phase-3-pull-request.md` and follow its instructions. Uses `scripts/create-pr.sh` for multi-platform PR creation. Capture `PR_NUMBER` and `PR_URL`.
 
 ## Phase 4 — Review & Fix Loop
 
-Read `references/phase-4-review-fix.md` and follow its instructions. Loops up to 3 iterations. Uses `scripts/verify.sh` after each fix round.
+Read `${CLAUDE_SKILL_DIR}/references/phase-4-review-fix.md` and follow its instructions. Loops up to 3 iterations. Uses `scripts/verify.sh` after each fix round.
 
 ## Phase 4.5 — Merge
 
@@ -115,7 +112,7 @@ git -C "$WORKTREE" push
 Then merge:
 
 ```bash
-bash "$SKILL_DIR/scripts/merge-cleanup.sh" merge "$PR_NUMBER" "$PR_CLI" "$MERGE_STRATEGY"
+bash "${CLAUDE_SKILL_DIR}/scripts/merge-cleanup.sh" merge "$PR_NUMBER" "$PR_CLI" "$MERGE_STRATEGY"
 ```
 
 - Exit code 0 → `merged = yes`
@@ -124,7 +121,7 @@ bash "$SKILL_DIR/scripts/merge-cleanup.sh" merge "$PR_NUMBER" "$PR_CLI" "$MERGE_
 ## Phase 5 — Cleanup
 
 ```bash
-bash "$SKILL_DIR/scripts/merge-cleanup.sh" cleanup "$WORKTREE"
+bash "${CLAUDE_SKILL_DIR}/scripts/merge-cleanup.sh" cleanup "$WORKTREE"
 ```
 
 Always runs, regardless of merge outcome.
@@ -136,7 +133,7 @@ Always runs, regardless of merge outcome.
 If the pipeline is interrupted at any phase, run cleanup manually to remove the worktree:
 
 ```bash
-bash "$SKILL_DIR/scripts/merge-cleanup.sh" cleanup "$WORKTREE"
+bash "${CLAUDE_SKILL_DIR}/scripts/merge-cleanup.sh" cleanup "$WORKTREE"
 ```
 
 To list all active worktrees:

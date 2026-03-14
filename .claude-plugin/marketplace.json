@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "develop-plugin",
-      "source": ".",
+      "source": "./develop-plugin",
       "description": "Autonomous feature developer — builds a feature from request to merged PR."
     }
   ]

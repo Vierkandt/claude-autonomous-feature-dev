@@ -20,7 +20,7 @@
 3. **Verify** using the verify script. Run it in single-attempt mode first to see where things stand:
 
    ```bash
-   bash "$SKILL_DIR/scripts/verify.sh" "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LINT_CMD"
+   bash "${CLAUDE_SKILL_DIR}/scripts/verify.sh" "$WORKTREE" 0 "$BUILD_CMD" "$TEST_CMD" "$LINT_CMD"
    ```
 
    If any step fails, read the error output, fix the code, and re-run. The script prints the last 20 lines of output for each failure to help diagnosis.

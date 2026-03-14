@@ -64,13 +64,13 @@ Add to your project's `.claude/settings.local.json`:
 
 ### 2. Add a project context file
 
-Copy the template into your project and fill it in:
+Copy the template into your project and fill it in. The template is bundled with the plugin — after installation, the skill will reference it automatically via `${CLAUDE_SKILL_DIR}/assets/project-context.template.md`. You can also copy it manually:
 
-```bash
-cp ~/.claude/plugins/cache/claude-autonomous-feature-dev/assets/project-context.template.md docs/project-context.md
+```
+/auto-dev set up project context
 ```
 
-The context file tells the skill your stack, build commands, coding conventions, and PR preferences. The skill won't run without it.
+Or ask Claude to copy the template for you. The context file tells the skill your stack, build commands, coding conventions, and PR preferences. The skill won't run without it.
 
 ## Usage
 
@@ -88,12 +88,10 @@ The context file tells the skill your stack, build commands, coding conventions,
 
 ## Aborting & Recovery
 
-If the pipeline is interrupted, clean up the worktree manually:
+If the pipeline is interrupted, tell Claude to clean up:
 
-```bash
-bash ~/.claude/plugins/cache/claude-autonomous-feature-dev/scripts/merge-cleanup.sh cleanup <worktree-path>
-```
+> "clean up the worktree from the last auto-dev run"
 
-To list active worktrees: `git worktree list`
+Or list active worktrees with `git worktree list` and remove manually.
 
 Re-running `/auto-dev` with the same feature description is safe — setup is idempotent and will reuse the existing worktree and branch.

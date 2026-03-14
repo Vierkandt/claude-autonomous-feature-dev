@@ -3,14 +3,14 @@
 # Usage: bash setup.sh "<feature request text>" [context-file-path]
 #
 # Output: prints KEY=VALUE pairs to stdout (one per line):
-#   SLUG, BRANCH, WORKTREE, PLAN_FILE, SKILL_DIR, CONTEXT_FILE
+#   SLUG, BRANCH, WORKTREE, PLAN_FILE, CONTEXT_FILE
 
 set -euo pipefail
 
 FEATURE_REQUEST="${1:?Usage: setup.sh \"<feature request text>\" [context-file-path]}"
 CONTEXT_FILE_ARG="${2:-}"
 
-# Resolve skill directory from script location (works even if invoked via symlink)
+# Resolve skill directory from script location (used only for error messages)
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Derive slug: lowercase, non-alphanum → hyphens, collapse, strip, truncate
@@ -72,5 +72,4 @@ echo "SLUG=${SLUG}"
 echo "BRANCH=${BRANCH}"
 echo "WORKTREE=${WORKTREE}"
 echo "PLAN_FILE=${PLAN_FILE}"
-echo "SKILL_DIR=${SKILL_DIR}"
 echo "CONTEXT_FILE=${CONTEXT_FILE}"

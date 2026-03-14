@@ -203,7 +203,7 @@ IS_EXISTING_PROJECT=<"true" or "false">
 
 ## Instructions
 Follow the decomposer agent instructions in full.
-Write workbranch files to: docs/workbranches/<PLAN_SLUG>/
+Write workbranch files to: ${PROJECT_ROOT}/docs/workbranches/<PLAN_SLUG>/
 Print the decomposition summary when done.
 ```
 
@@ -343,8 +343,8 @@ Invoke the autonomous-feature-developer skill. Execute all phases in order:
 
 Phase 0: Pass the workbranch's Description as the feature request to setup.sh.
 Phase 1: Use the Sub-features above as your Implementation Order seed.
-         Read docs/project-contract.md (required).
-         Read docs/wave-learnings.md if it exists.
+         Read ${PROJECT_ROOT}/docs/project-contract.md (required).
+         Read ${PROJECT_ROOT}/docs/wave-learnings.md if it exists.
          After committing your plan, perform the Phase 1 sync point protocol.
          See references/phase-1-architecture.md Step 5a.
 Phase 2: Implement according to the plan. Follow the contract for all shared concerns.
@@ -356,6 +356,11 @@ Phase 5: Run cleanup.
 ```
 
 ### 10e. Phase 1 sync point
+
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
 
 After dispatching all agents for the wave, poll for Phase 1 reports.
 
@@ -503,6 +508,11 @@ Print merge queue progress for each workbranch:
 
 ### 10h. Tag post-wave
 
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
+
 ```bash
 git tag "swarm/${PLAN_SLUG}/post-wave-${N}"
 git push origin "swarm/${PLAN_SLUG}/post-wave-${N}"
@@ -535,8 +545,8 @@ WAVE_NUMBER=<N>
 PLAN_SLUG=<PLAN_SLUG>
 PRE_WAVE_TAG=swarm/<PLAN_SLUG>/pre-wave-<N>
 POST_WAVE_TAG=swarm/<PLAN_SLUG>/post-wave-<N>
-CONTRACT_FILE=docs/project-contract.md
-LEARNINGS_FILE=docs/wave-learnings.md
+CONTRACT_FILE=${PROJECT_ROOT}/docs/project-contract.md
+LEARNINGS_FILE=${PROJECT_ROOT}/docs/wave-learnings.md
 BUILD_CMD=<BUILD_CMD>
 TEST_CMD=<TEST_CMD or empty string>
 LINT_CMD=<LINT_CMD or empty string>
@@ -645,8 +655,8 @@ You are the integration reviewer. Run a final review of the fully merged codebas
 
 ## Parameters
 PLAN_FILE=<PLAN_FILE_PATH>
-CONTRACT_FILE=docs/project-contract.md
-LEARNINGS_FILE=docs/wave-learnings.md
+CONTRACT_FILE=${PROJECT_ROOT}/docs/project-contract.md
+LEARNINGS_FILE=${PROJECT_ROOT}/docs/wave-learnings.md
 BASE_BRANCH=<BASE_BRANCH>
 BUILD_CMD=<BUILD_CMD>
 TEST_CMD=<TEST_CMD or empty string>

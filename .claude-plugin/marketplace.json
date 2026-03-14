@@ -7,7 +7,7 @@
     {
       "name": "develop-plugin",
       "source": "./develop-plugin",
-      "description": "Autonomous feature developer — builds a feature from request to merged PR."
+      "description": "Autonomous feature developer and swarm orchestrator — builds features from request to merged PR, and orchestrates parallel agent swarms for full-platform development."
     }
   ]
 }

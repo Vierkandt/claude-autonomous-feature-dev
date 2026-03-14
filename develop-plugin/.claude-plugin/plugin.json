@@ -5,21 +5,5 @@
   "author": {
     "name": "Vierkandt"
   },
-  "repository": "https://github.com/Vierkandt/claude-autonomous-feature-dev",
-  "commands": [
-    "commands/init.md",
-    "commands/auto-dev.md",
-    "commands/plan.md",
-    "commands/import-plan.md",
-    "commands/swarm.md"
-  ],
-  "agents": [
-    "agents/swarm-orchestrator.md",
-    "agents/decomposer.md",
-    "agents/wave-transition.md"
-  ],
-  "skills": [
-    "skills/autonomous-feature-developer/SKILL.md",
-    "skills/integration-reviewer/SKILL.md"
-  ]
+  "repository": "https://github.com/Vierkandt/claude-autonomous-feature-dev"
 }

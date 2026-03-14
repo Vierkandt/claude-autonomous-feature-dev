@@ -55,9 +55,27 @@ Then re-run: /auto-dev <feature description>
 
 ## Step 2 — Get the feature request
 
-The feature request is: **$ARGUMENTS**
+The input is: **$ARGUMENTS**
 
-If `$ARGUMENTS` is empty, ask the user: "What feature would you like to build?"
+**Determine input type:**
+
+**Case 1 — Workbranch file:** If `$ARGUMENTS` is non-empty and ends with `.md`, check whether the file exists and has `# Workbranch:` as its first line:
+
+```bash
+FILE_FIRST_LINE=$(head -1 "$ARGUMENTS" 2>/dev/null)
+```
+
+If `FILE_FIRST_LINE` starts with `# Workbranch:`, this is a swarm invocation. Extract:
+
+- `FEATURE_DESCRIPTION` — the full text of the `## Description` section
+- `WORKBRANCH_SUBFEATURES` — the numbered list from the `## Sub-features` section (preserve all lines including numbers and descriptions)
+- `WORKBRANCH_SLUG` — the filename without the `.md` extension (basename only)
+- `PLAN_SLUG` — from the `## Context` section's `Plan:` field: extract the path, get `basename $(dirname $(dirname <plan-path>))` — i.e., the plan slug is the `<slug>` in `docs/workbranches/<slug>/`
+- `WORKBRANCH_FILE` — the full path as provided in `$ARGUMENTS`
+
+**Case 2 — Free-text description:** `$ARGUMENTS` is non-empty but is not a workbranch file. Set `FEATURE_DESCRIPTION="$ARGUMENTS"`. Set `WORKBRANCH_FILE=""`, `WORKBRANCH_SUBFEATURES=""`, `WORKBRANCH_SLUG=""`, `PLAN_SLUG=""`.
+
+**Case 3 — Empty:** Ask the user: "What feature would you like to build?"
 
 ---
 
@@ -76,3 +94,16 @@ Invoke the `autonomous-feature-developer` skill and follow it exactly. Execute a
 7. Phase 5 — Cleanup (remove worktree)
 
 Report final status when done using the Done table from the skill.
+
+If `WORKBRANCH_FILE` is non-empty (swarm invocation), pass these additional variables to the skill:
+
+- `WORKBRANCH_FILE` — the workbranch file path
+- `WORKBRANCH_SLUG` — the workbranch slug
+- `PLAN_SLUG` — the plan slug
+- `WORKBRANCH_SUBFEATURES` — the sub-features list
+- `PHASE1_SYNC` — set to `"true"`
+
+In swarm invocations, the skill must skip Phase 4.5 (Merge). The /swarm command manages
+all merging via the sequential merge queue. The skill runs Phases 0–4 (setup, architecture,
+implementation, PR creation, review loop), then writes the done marker (Phase 5.5), then
+runs Phase 5 (cleanup). It does NOT merge the PR.

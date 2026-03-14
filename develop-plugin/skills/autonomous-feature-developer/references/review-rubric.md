@@ -20,6 +20,9 @@ Use this when no external review tool is available. Work through every applicabl
 - Imports: correct style (relative vs. absolute)? No circular dependencies?
 - Exports: matches project convention (named vs. default)?
 - File location: is each new file in the right directory per project structure?
+- **Contract compliance:** Do all new files follow the project contract's model shapes,
+  API error format, file locations, and coding patterns? Reference `docs/project-contract.md`.
+  Check each contract section that is relevant to this feature.
 
 ## Security
 

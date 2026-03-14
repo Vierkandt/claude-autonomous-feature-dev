@@ -282,6 +282,13 @@ git push origin "swarm/${PLAN_SLUG}/pre-wave-${N}"
 
 Append the tag to the state file's `tags` array. Write the updated state file.
 
+Print wave start banner:
+```
+═══════════════════════════════════════════
+ Wave N starting — M workbranches
+═══════════════════════════════════════════
+```
+
 ### 10c. Collect workbranches for this wave
 
 Read all workbranch files whose `## Wave` section equals N. Exclude any whose slug is in `failed_features` or `blocked_features`.
@@ -291,6 +298,11 @@ Read all workbranch files whose `## Wave` section equals N. Exclude any whose sl
 For each workbranch in the wave's set, invoke one Agent tool call. All agents are dispatched concurrently — do not wait for agent N to finish before dispatching agent N+1.
 
 Update each workbranch file's `Status:` field from `pending` to `in-progress`.
+
+For each dispatched agent, print:
+```
+  ⚙ <workbranch-name> — dispatched
+```
 
 Agent tool parameters:
 
@@ -343,6 +355,11 @@ Poll every 60 seconds for all `<workbranch-slug>-phase1-report.json` files in `d
 
 Timeout: 20 minutes. Any workbranch that has not produced a report by then is marked failed: "Phase 1 report timeout."
 
+As each phase1-report.json is detected, print:
+```
+  ✓ <workbranch-name> — Phase 1 complete, N files planned
+```
+
 Once all reports are collected, build the conflict map:
 
 ```
@@ -388,9 +405,23 @@ Sequencing example (both need the file, dashboard waits for auth):
 }
 ```
 
+When all reports are in, print:
+```
+  Phase 1 sync: <N conflicts resolved | no conflicts>
+```
+
 ### 10f. Wait for all agents to finish Phase 2–5
 
 Poll every 60 seconds for `<workbranch-slug>-done.json` files in `docs/workbranches/${PLAN_SLUG}/`. If an agent has produced no done marker for more than 60 minutes, mark it as failed with reason "agent timeout (60 min)."
+
+As each done marker is detected, print:
+```
+  ✓ <workbranch-name> — complete (PR #N, M review iterations)
+```
+or:
+```
+  ✗ <workbranch-name> — failed: <error summary>
+```
 
 ### 10g. Sequential merge queue
 
@@ -447,6 +478,12 @@ git push --force-with-lease origin <branch>
 ```
 
 Update the workbranch file's `Status:` field to `merged` or `failed` depending on the outcome.
+
+Print merge queue progress for each workbranch:
+```
+  Merging: <name> — rebasing onto <base-branch>...
+  ✓ <name> merged (PR #N)
+```
 
 ### 10h. Tag post-wave
 
@@ -510,6 +547,12 @@ LEARNINGS_ADDED: N
 
 Store these values in the swarm state as annotations on `wave_results[N]` under the `_transition` key.
 
+Print wave transition summary:
+```
+  Wave transition: N issues, N fixed, N contract updates, N learnings
+───────────────────────────────────────────
+```
+
 If the completion block is not found, log: `WARN: wave-transition did not produce WAVE_TRANSITION_COMPLETE signal for wave N` and continue. The swarm does not halt on wave-transition failure.
 
 ### 10j. Update swarm state
@@ -546,6 +589,11 @@ To resume after fixing the root cause:
 Update state: `status: "halted"`, `halt_reason: "<description>"`. Write state file. Stop execution.
 
 Otherwise: log any failures and newly blocked features as warnings and continue to wave N+1.
+
+If continuing to the next wave, print:
+```
+  Halt check: N% remaining features blocked → continuing
+```
 
 ## Step 11 — Final integration review
 

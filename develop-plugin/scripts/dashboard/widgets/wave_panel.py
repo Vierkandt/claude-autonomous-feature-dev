@@ -34,6 +34,7 @@ BUILD_ICONS = {
     "passing": ("\u2713", "green"),
     "failing": ("\u2717", "red"),
     "not_run": ("-", "dim"),
+    "skipped": ("\u2013", "dim"),  # en-dash
 }
 
 

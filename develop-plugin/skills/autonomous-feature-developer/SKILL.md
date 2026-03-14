@@ -89,7 +89,7 @@ Progress file path: `docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-progress.json
 
 Write progress using:
 ```bash
-cat > "docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-progress.json" << 'PROGRESS_EOF'
+cat > "docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-progress.json" << PROGRESS_EOF
 {
   "workbranch": "$WORKBRANCH_SLUG",
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",

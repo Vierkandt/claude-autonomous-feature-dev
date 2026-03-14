@@ -244,7 +244,7 @@ class SwarmStateReader:
             wbs.phase_detail = ""
 
         # Merge progress heartbeat data (supplements, not replaces, existing data)
-        if slug in progress_data:
+        if slug in progress_data and slug not in done_data:
             pd = progress_data[slug]
             wbs.current_action = pd.get("current_action", "")
             wbs.files_created = pd.get("files_created", [])
@@ -253,6 +253,7 @@ class SwarmStateReader:
             wbs.test_status = pd.get("test_status", "not_run")
             wbs.commits = pd.get("commits", 0)
             wbs.last_update = pd.get("timestamp", "")
+            wbs.progress_errors = pd.get("errors", [])
             # Use sub-feature progress from heartbeat if available
             sf_index = pd.get("sub_feature_index")
             sf_total = pd.get("sub_feature_total")

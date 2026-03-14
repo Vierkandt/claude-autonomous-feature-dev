@@ -30,6 +30,7 @@ class WorkbranchState:
     test_status: str = "not_run"
     commits: int = 0
     last_update: str = ""
+    progress_errors: list[str] = field(default_factory=list)
 
 
 @dataclass

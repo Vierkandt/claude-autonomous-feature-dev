@@ -282,16 +282,16 @@ git push origin "swarm/${PLAN_SLUG}/pre-wave-${N}"
 
 Append the tag to the state file's `tags` array. Write the updated state file.
 
+### 10c. Collect workbranches for this wave
+
+Read all workbranch files whose `## Wave` section equals N. Exclude any whose slug is in `failed_features` or `blocked_features`.
+
 Print wave start banner:
 ```
 ═══════════════════════════════════════════
  Wave N starting — M workbranches
 ═══════════════════════════════════════════
 ```
-
-### 10c. Collect workbranches for this wave
-
-Read all workbranch files whose `## Wave` section equals N. Exclude any whose slug is in `failed_features` or `blocked_features`.
 
 ### 10d. Dispatch auto-dev agents (parallel)
 
@@ -358,6 +358,7 @@ Timeout: 20 minutes. Any workbranch that has not produced a report by then is ma
 As each phase1-report.json is detected, print:
 ```
   ✓ <workbranch-name> — Phase 1 complete, N files planned
+  ✗ <workbranch-name> — Phase 1 timeout (20 min)
 ```
 
 Once all reports are collected, build the conflict map:
@@ -483,6 +484,8 @@ Print merge queue progress for each workbranch:
 ```
   Merging: <name> — rebasing onto <base-branch>...
   ✓ <name> merged (PR #N)
+  ✗ <name> — merge failed: <error summary>
+  - <name> — skipped (failed during development)
 ```
 
 ### 10h. Tag post-wave
@@ -593,6 +596,8 @@ Otherwise: log any failures and newly blocked features as warnings and continue 
 If continuing to the next wave, print:
 ```
   Halt check: N% remaining features blocked → continuing
+  Halt check: N% remaining features blocked → HALTED
+  Halt check: all workbranches in Wave N failed → HALTED
 ```
 
 ## Step 11 — Final integration review

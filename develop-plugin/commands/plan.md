@@ -162,7 +162,14 @@ mkdir -p docs/plans docs/workbranches docs/reports
 
 Write the plan to `docs/plans/<slug>-plan.md`.
 
-Write the contract to `docs/project-contract.md`. If the file already exists, warn the user before overwriting: "docs/project-contract.md already exists. Overwriting it — backing up the previous contract to docs/project-contract.backup.md first." Copy the existing file to `docs/project-contract.backup.md` before writing the new one.
+Write the contract to `docs/project-contract.md`. If the file already exists, create a timestamped backup before overwriting:
+
+```bash
+TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
+cp docs/project-contract.md "docs/project-contract.${TIMESTAMP}.backup.md"
+```
+
+Warn the user: "docs/project-contract.md already exists. Backed up to: docs/project-contract.YYYY-MM-DD-HHMMSS.backup.md" (showing the actual timestamp used).
 
 For new projects only: the decomposer has already written workbranch files to `docs/workbranches/<slug>/`.
 

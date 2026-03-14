@@ -22,21 +22,20 @@ A Claude Code plugin that builds features end-to-end — architecture, implement
 
 ## Installation
 
-Clone the repo directly into your Claude plugins directory:
+Add the repo as a marketplace, then install from it:
 
-**macOS / Linux:**
-```bash
-git clone https://github.com/Vierkandt/claude-autonomous-feature-dev \
-  ~/.claude/plugins/develop-plugin
+```
+/plugin marketplace add Vierkandt/claude-autonomous-feature-dev
+/plugin install develop-plugin@claude-autonomous-feature-dev
 ```
 
-**Windows (Git Bash):**
-```bash
-git clone https://github.com/Vierkandt/claude-autonomous-feature-dev \
-  ~/.claude/plugins/develop-plugin
+Or manage everything through the interactive UI:
+
+```
+/plugin
 ```
 
-No `claude plugin install` needed — Claude Code discovers plugins placed in the plugins directory automatically on next startup.
+Go to **Marketplaces → Add**, paste `Vierkandt/claude-autonomous-feature-dev`, then install `develop-plugin` from the Discover tab.
 
 ## Setup
 

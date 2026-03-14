@@ -101,6 +101,7 @@ class SwarmDashboard(App):
         self._all_workbranches: list[tuple[int, str]] = []  # (wave_num, slug)
         self._watcher_task: asyncio.Task | None = None
         self._use_watchfiles = False
+        self._refresh_counter = 0
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -178,12 +179,13 @@ class SwarmDashboard(App):
         merge_queue = self.query_one("#merge-queue", MergeQueueBar)
         merge_queue.update_state(self._state)
 
-        # Rebuild wave panels
+        # Rebuild wave panels with unique IDs to avoid DuplicateIds error
+        self._refresh_counter += 1
         container = self.query_one("#wave-container", Vertical)
         container.remove_children()
         for wave_num in sorted(self._state.waves.keys()):
             wave = self._state.waves[wave_num]
-            panel = WavePanel(wave, id=f"wave-{wave_num}")
+            panel = WavePanel(wave, id=f"wave-{wave_num}-r{self._refresh_counter}")
             container.mount(panel)
 
         # Update detail panel if visible

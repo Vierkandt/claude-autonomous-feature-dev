@@ -31,7 +31,7 @@ Then fill it in. The skill won't proceed without one.
 | Phase | What happens | Reads |
 |---|---|---|
 | **0 — Setup** | Create worktree + branch | Context file |
-| **1 — Architecture** | Explore codebase, write plan | `references/phase-1-architecture.md` |
+| **1 — Architecture** | Explore codebase, write plan | `references/phase-1-architecture.md`, `docs/project-contract.md` (if exists), `docs/wave-learnings.md` (if exists, wave 2+) |
 | **2 — Implementation** | Code the plan, verify build/tests | `references/phase-2-implementation.md` |
 | **3 — Pull Request** | Push, open PR | `references/phase-3-pull-request.md` |
 | **4 — Review & Fix** | Review → fix → verify loop (max 3) | `references/phase-4-review-fix.md`, `references/review-rubric.md` |
@@ -54,10 +54,30 @@ Read `docs/project-context.md` (or user-specified path) before anything else. Ex
 | `LINT_CMD` | Build & Run → lint | *(empty — skip)* |
 | `MERGE_STRATEGY` | Git / PR Conventions → merge strategy | `--squash` |
 | `PR_CLI` | Git / PR Conventions → hosting CLI | `gh` |
+| `CONTRACT_FILE` | Derived: `docs/project-contract.md` at `$REPO_ROOT` | `docs/project-contract.md` |
+| `LEARNINGS_FILE` | Derived: `docs/wave-learnings.md` at `$REPO_ROOT` | `docs/wave-learnings.md` |
 
 The path to the context file itself is `$CONTEXT_FILE`, captured from `setup.sh` output. To use a non-default location, pass it as the second argument to `setup.sh` (see Phase 0).
 
 These variables are passed to scripts as arguments or environment variables.
+
+These files may not exist for standalone `/auto-dev` invocations. The skill checks for their existence before reading them — missing files are skipped silently.
+
+---
+
+## Swarm Context
+
+When invoked via `/swarm`, additional variables are passed:
+
+| Variable | Meaning |
+|---|---|
+| `WORKBRANCH_FILE` | Path to the workbranch file for this feature |
+| `WORKBRANCH_SLUG` | Slug of this workbranch (filename without .md) |
+| `PLAN_SLUG` | Slug of the parent plan |
+| `WORKBRANCH_SUBFEATURES` | Newline-separated list of sub-feature descriptions from the workbranch file |
+| `PHASE1_SYNC` | `"true"` — agent must perform Phase 1 sync point protocol |
+
+If `WORKBRANCH_FILE` is empty, this is a standalone invocation. All swarm-specific steps are no-ops.
 
 ---
 
@@ -99,6 +119,10 @@ Read `${CLAUDE_SKILL_DIR}/references/phase-4-review-fix.md` and follow its instr
 
 ## Phase 4.5 — Merge
 
+**Swarm invocation only:** If `WORKBRANCH_FILE` is non-empty, skip Phase 4.5 entirely.
+The /swarm command manages all merging via the sequential merge queue. Proceed directly
+to Phase 5.5 (Write done marker), then Phase 5 (Cleanup).
+
 Before merging, delete the plan file so it does not appear in the squash commit:
 
 ```bash
@@ -125,6 +149,55 @@ bash "${CLAUDE_SKILL_DIR}/scripts/merge-cleanup.sh" cleanup "$WORKTREE"
 ```
 
 Always runs, regardless of merge outcome.
+
+---
+
+## Phase 5.5 — Write done marker (swarm invocation only)
+
+If `WORKBRANCH_FILE` is empty, skip this phase.
+
+Write the done marker before performing Phase 5 cleanup. Path:
+
+```
+docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-done.json
+```
+
+On success (review loop completed, PR open and ready to merge):
+
+```json
+{
+  "workbranch": "<WORKBRANCH_SLUG>",
+  "status": "merged",
+  "pr_url": "<PR_URL>",
+  "pr_number": "<PR_NUMBER>",
+  "merged": false,
+  "branch": "<BRANCH>",
+  "worktree": "<WORKTREE>",
+  "review_iterations": <N>,
+  "contract_deviations": ["<deviation description if any, or empty array>"]
+}
+```
+
+Note: `"merged": false` because `/swarm` handles merging. Status `"merged"` here means "ready to merge — PR is open, review loop complete."
+
+On failure (any phase failed to complete):
+
+```json
+{
+  "workbranch": "<WORKBRANCH_SLUG>",
+  "status": "failed",
+  "pr_url": "<PR_URL or empty string>",
+  "pr_number": "<PR_NUMBER or empty string>",
+  "merged": false,
+  "branch": "<BRANCH>",
+  "worktree": "<WORKTREE>",
+  "review_iterations": <N>,
+  "contract_deviations": [],
+  "error": "<one to two sentence summary of what failed and why>"
+}
+```
+
+Write the done marker even if Phase 5 cleanup subsequently fails.
 
 ---
 

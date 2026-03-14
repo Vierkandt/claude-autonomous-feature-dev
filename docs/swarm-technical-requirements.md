@@ -218,7 +218,7 @@ mkdir -p docs/plans docs/workbranches docs/reports
 
 Write the plan to `docs/plans/<slug>-plan.md`.
 
-Write the contract to `docs/project-contract.md`. If the file already exists, warn the user before overwriting: "docs/project-contract.md already exists. Overwriting it — backing up the previous contract to docs/project-contract.backup.md first." Copy the existing file to `docs/project-contract.backup.md` before writing the new one.
+Write the contract to `docs/project-contract.md`. If the file already exists, warn the user before overwriting: "docs/project-contract.md already exists. Overwriting it — backing up the previous contract to docs/project-contract.backup.md first." Create a timestamped backup: `cp docs/project-contract.md docs/project-contract.$(date +%Y-%m-%d-%H%M%S).backup.md`
 
 For new projects only: the decomposer has already written workbranch files to `docs/workbranches/<slug>/`.
 
@@ -2506,7 +2506,7 @@ Workbranch slug: derived from the `# Workbranch: <Name>` heading. Strip the `# W
 
 3. **Direct base branch commits by wave-transition:** The wave-transition agent commits auto-fixes, contract updates, and learnings directly to the base branch. This bypasses branch protection rules requiring PRs. Document this requirement: "The swarm requires direct push access to the base branch for the wave-transition agent's work. If your repository has branch protection enabled, the wave-transition auto-fix and commit steps will fail." The swarm continues (wave-transition failure is non-fatal) but contract and learnings updates will not persist.
 
-4. **Contract backup:** `/plan` and `/import-plan` back up the existing `docs/project-contract.md` to `docs/project-contract.backup.md` before overwriting. Only one backup is kept — re-running `/plan` overwrites the backup too.
+4. **Contract backup:** `/plan` and `/import-plan` back up the existing `docs/project-contract.md` to `docs/project-contract.backup.md` before overwriting. Contract backups are timestamped (e.g., `project-contract.2026-03-14-103045.backup.md`). Multiple backups are preserved across successive `/plan` runs.
 
 ### Testing checklist
 

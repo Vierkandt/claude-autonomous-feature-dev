@@ -80,6 +80,12 @@ PLAN_SLUG=$(basename "$PLAN_FILE" | sed 's/-plan\.md$//' \
 
 **CRITICAL CONSTRAINT:** The /swarm orchestrator must NEVER change its working directory into a worktree. All worktree operations happen exclusively inside dispatched auto-dev agents. The orchestrator stays at `$PROJECT_ROOT` at all times. Use absolute paths for every file operation: `"${PROJECT_ROOT}/docs/workbranches/..."` not `"docs/workbranches/..."`.
 
+**Drift guard:** Before every major step, verify the orchestrator has not drifted:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
+This check is referenced as "Run the drift guard" in subsequent steps.
+
 ## Step 3 — Check for existing swarm state
 
 ```bash
@@ -183,29 +189,7 @@ Invoke the `decomposer` agent via the Agent tool with these parameters:
 tools: ["Read", "Write", "Glob", "Grep", "Bash"]
 ```
 
-Prompt:
-
-```
-You are the decomposer agent. Decompose the following plan into workbranch files.
-
-## Plan document
-<FULL TEXT CONTENT OF PLAN FILE>
-
-## Project contract
-<FULL TEXT CONTENT OF docs/project-contract.md>
-
-## Project context
-<FULL TEXT CONTENT OF docs/project-context.md>
-
-## Parameters
-PLAN_SLUG=<PLAN_SLUG>
-IS_EXISTING_PROJECT=<"true" or "false">
-
-## Instructions
-Follow the decomposer agent instructions in full.
-Write workbranch files to: ${PROJECT_ROOT}/docs/workbranches/<PLAN_SLUG>/
-Print the decomposition summary when done.
-```
+Use the decomposer prompt template from `references/swarm-dispatch-prompts.md` (section: Decomposer Prompt Template). Substitute all angle-bracket placeholders with actual values.
 
 After decomposition (or using existing files), read all `*.md` files from `$WB_DIR` (excluding `swarm-state.json`) to build the workbranch list.
 
@@ -348,49 +332,11 @@ isolation: "worktree"
 
 The `isolation` parameter ensures each agent runs in a system-managed worktree — agents must never create worktrees manually.
 
-Prompt template (substitute angle-bracket placeholders with actual values):
-
-```
-You are an autonomous feature developer. Build the feature defined in the workbranch
-file below. Run it to completion without pausing for input.
-
-## Workbranch file
-Path: <WORKBRANCH_FILE_PATH>
-Read this file first.
-
-## Variables
-WORKBRANCH_FILE=<WORKBRANCH_FILE_PATH>
-WORKBRANCH_SLUG=<WORKBRANCH_SLUG>
-PLAN_SLUG=<PLAN_SLUG>
-PHASE1_SYNC=true
-
-## Sub-features (Implementation Order seed)
-<PASTE THE FULL NUMBERED SUB-FEATURES LIST FROM THE WORKBRANCH FILE>
-
-## Instructions
-
-Invoke the autonomous-feature-developer skill. Execute all phases in order:
-
-Phase 0: Pass the workbranch's Description as the feature request to setup.sh.
-Phase 1: Use the Sub-features above as your Implementation Order seed.
-         Read ${PROJECT_ROOT}/docs/project-contract.md (required).
-         Read ${PROJECT_ROOT}/docs/wave-learnings.md if it exists.
-         After committing your plan, perform the Phase 1 sync point protocol.
-         See references/phase-1-architecture.md Step 5a.
-Phase 2: Implement according to the plan. Follow the contract for all shared concerns.
-Phase 3: Create the PR.
-Phase 4: Run the review and fix loop.
-Phase 4.5: SKIP. Do not merge the PR. /swarm handles merging.
-Phase 5.5: Write the done marker file. See SKILL.md Phase 5.5.
-Phase 5: Run cleanup.
-```
+Use the auto-dev dispatch prompt template from `references/swarm-dispatch-prompts.md` (section: Auto-dev Dispatch Prompt Template). Substitute all angle-bracket placeholders with actual values.
 
 ### 10e. Phase 1 sync point
 
-Verify working directory before proceeding:
-```bash
-[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
-```
+Run the drift guard (see Step 2).
 
 After dispatching all agents for the wave, poll for Phase 1 reports.
 
@@ -492,10 +438,7 @@ fi
 
 ### 10g. Sequential merge queue
 
-Verify working directory before proceeding:
-```bash
-[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
-```
+Run the drift guard (see Step 2).
 
 After all done markers for a wave are present (or the 60-minute agent timeout is reached), run the sequential merge queue.
 
@@ -514,40 +457,11 @@ bash "${SKILL_DIR}/scripts/swarm-rebase-merge.sh" \
 
 3. Exit 0 -> record "merged" in swarm state, continue to next.
 
-4. Exit 1 (conflict) -> run conflict resolution (see below).
+4. Exit 1 (conflict) → apply conflict resolution per `references/swarm-merge-resolution.md`.
 
 5. Exit 2 (CLI failure) -> record "failed" with error "merge CLI failure", continue.
 
 6. Exit 3 (push rejected) -> wait 5 seconds, retry once. If retry fails -> record "failed" with error "push rejected after rebase", continue.
-
-#### Orchestrator conflict resolution (exit 1)
-
-The script outputs `CONFLICT_FILES:` followed by one conflicting path per line. For each conflicting file:
-
-1. Read the file at HEAD (current base branch state after prior merges in this queue): `git show HEAD:<file>`
-2. Read the file from the feature branch: `git show <branch>:<file>`
-3. Read both workbranch files for intent.
-4. Read the contract for the canonical version of any model or pattern.
-
-Resolution rules (apply in order, first match wins):
-
-| File type | Resolution |
-|---|---|
-| Shared type file (`src/types/*.ts`, similar) | Merge both sets of additions — both features added different exports, keep both |
-| Config file (`package.json`, `.env.example`, etc.) | Merge additive changes; for conflicting values, use the base branch version |
-| Model/schema file | Use higher-priority workbranch's version (it merged first, it is ground truth). Log the decision in wave learnings. |
-| Any other file | If the conflict is purely additive (both add non-overlapping content), merge both. Otherwise, use higher-priority workbranch's version. |
-| Unresolvable | Abort rebase: `git rebase --abort`. Record "failed" with error "unresolvable merge conflict in `<file>` — manual resolution required". Continue queue. |
-
-After applying resolution:
-
-```bash
-# For each resolved file:
-git add -- <file>
-git rebase --continue
-git push --force-with-lease origin <branch>
-# Then proceed with PR merge
-```
 
 Update the workbranch file's `Status:` field to `merged` or `failed` depending on the outcome.
 
@@ -561,10 +475,7 @@ Print merge queue progress for each workbranch:
 
 ### 10h. Tag post-wave
 
-Verify working directory before proceeding:
-```bash
-[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
-```
+Run the drift guard (see Step 2).
 
 ```bash
 git tag "swarm/${PLAN_SLUG}/post-wave-${N}"
@@ -592,10 +503,7 @@ fi
 
 ### 10i. Run wave-transition agent
 
-Verify working directory before proceeding:
-```bash
-[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
-```
+Run the drift guard (see Step 2).
 
 Invoke the wave-transition agent via the Agent tool.
 
@@ -605,35 +513,7 @@ Agent tool parameters:
 tools: ["Edit", "Write", "Read", "Glob", "Grep", "Bash"]
 ```
 
-Prompt:
-
-```
-You are the wave-transition agent. Run a single-pass post-wave review for Wave <N>.
-
-## Parameters
-WAVE_NUMBER=<N>
-PLAN_SLUG=<PLAN_SLUG>
-PRE_WAVE_TAG=swarm/<PLAN_SLUG>/pre-wave-<N>
-POST_WAVE_TAG=swarm/<PLAN_SLUG>/post-wave-<N>
-CONTRACT_FILE=${PROJECT_ROOT}/docs/project-contract.md
-LEARNINGS_FILE=${PROJECT_ROOT}/docs/wave-learnings.md
-BUILD_CMD=<BUILD_CMD>
-TEST_CMD=<TEST_CMD or empty string>
-LINT_CMD=<LINT_CMD or empty string>
-BASE_BRANCH=<BASE_BRANCH>
-PR_CLI=<PR_CLI>
-
-## Merged workbranches this wave
-<ONE WORKBRANCH SLUG PER LINE>
-
-## Failed workbranches this wave
-<ONE WORKBRANCH SLUG PER LINE, or the word "none">
-
-## Instructions
-Follow the wave-transition agent instructions exactly. Produce all three outputs
-in a single pass: micro-review, contract updates, wave learnings.
-End your response with the WAVE_TRANSITION_COMPLETE block.
-```
+Use the wave-transition prompt template from `references/swarm-dispatch-prompts.md` (section: Wave-transition Prompt Template). Substitute all angle-bracket placeholders with actual values.
 
 Wait for the agent to complete. Parse the `WAVE_TRANSITION_COMPLETE` block from its output. The lines immediately following it are parsed as key-value pairs:
 
@@ -658,10 +538,7 @@ If the completion block is not found, log: `WARN: wave-transition did not produc
 
 ### 10j. Update swarm state
 
-Verify working directory before proceeding:
-```bash
-[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
-```
+Run the drift guard (see Step 2).
 
 Add N to `waves_completed`. Set `wave_results[N]` to a map of each workbranch slug to its status (from its done marker or merge queue result). Increment `current_wave` to N+1. Refresh `updated_at`. Write the state file.
 
@@ -705,10 +582,7 @@ Print halt check result:
 
 ## Step 11 — Final integration review
 
-Verify working directory before proceeding:
-```bash
-[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
-```
+Run the drift guard (see Step 2).
 
 After all waves complete, invoke the `integration-reviewer` skill via Agent tool.
 
@@ -718,32 +592,7 @@ Agent tool parameters:
 tools: ["Edit", "Write", "Read", "Glob", "Grep", "Bash"]
 ```
 
-Prompt:
-
-```
-You are the integration reviewer. Run a final review of the fully merged codebase.
-
-## Parameters
-PLAN_FILE=<PLAN_FILE_PATH>
-CONTRACT_FILE=${PROJECT_ROOT}/docs/project-contract.md
-LEARNINGS_FILE=${PROJECT_ROOT}/docs/wave-learnings.md
-BASE_BRANCH=<BASE_BRANCH>
-BUILD_CMD=<BUILD_CMD>
-TEST_CMD=<TEST_CMD or empty string>
-LINT_CMD=<LINT_CMD or empty string>
-PR_CLI=<PR_CLI>
-MERGE_STRATEGY=<MERGE_STRATEGY>
-
-## Merged PR URLs
-<ONE URL PER LINE — from wave_results where status === "merged">
-
-## Failed and blocked features
-<COMMA-SEPARATED LIST OF SLUGS, or "none">
-
-## Instructions
-Follow the integration-reviewer skill in full. End your response with:
-INTEGRATION_REVIEW_PR_URL=<url or "none">
-```
+Use the integration-reviewer prompt template from `references/swarm-dispatch-prompts.md` (section: Integration-reviewer Prompt Template). Substitute all angle-bracket placeholders with actual values.
 
 Wait for it to complete. Extract `INTEGRATION_REVIEW_PR_URL=<url>` from its output.
 
@@ -751,75 +600,9 @@ Update state: set `integration_pr_url` to the extracted value.
 
 ## Step 12 — Write final report
 
-Verify working directory before proceeding:
-```bash
-[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
-```
+Run the drift guard (see Step 2).
 
-Compose the report in this format:
-
-```markdown
-# Swarm Report — <Platform Name>
-
-**Date:** <ISO 8601 timestamp>
-**Plan:** <relative path to plan file>
-**Contract:** docs/project-contract.md
-**Learnings:** docs/wave-learnings.md
-**Duration:** <wall-clock time, e.g. "2h 14m">
-
-## Summary
-
-| Metric | Value |
-|---|---|
-| Features planned | N |
-| Features merged | N |
-| Features failed | N |
-| Features blocked | N |
-| Waves executed | N |
-| Contract updates | N |
-| Integration PR | <URL or "none needed"> |
-| Rollback tags | swarm/<slug>/pre-wave-1 through post-wave-<N> |
-
-## Wave Execution
-
-### Wave <N>
-- **Features:** <name> (merged), <name> (merged)
-- **Merge order:** <name> -> <name>
-- **Phase 1 sync:** <"no ownership conflicts" or "N conflicts resolved: <description>">
-- **Wave transition:** <N issues found>, <N auto-fixed>, <N warnings>, <N contract updates>, <N learnings>
-- **Halt check:** <"N% blocked -> continue" or "N% blocked -> HALT">
-
-## Features
-
-### <Feature Name>
-- **Status:** merged | failed | blocked
-- **Wave:** N
-- **Sub-features:** N completed / N planned
-- **PR:** <URL>
-- **Branch:** <branch name>
-- **Review iterations:** N
-- **Contract deviations:** <bulleted list or "none">
-- **Notes:** <any issues or deviations from the plan>
-
-## Integration Review
-- **Issues found:** N
-- **Issues fixed:** N
-- **Contract deviations found:** N
-- **Issues needing manual attention:** N
-- **Cleanup PR:** <URL or "none">
-
-## Failures and Blocked Features
-
-### <Feature Name> (FAILED)
-- **Wave:** N
-- **Reason:** <build failure | review loop exhausted | merge conflict | Phase 1 sync timeout | agent timeout>
-- **Last error:** <1-2 sentence summary>
-- **Rollback tag:** swarm/<slug>/pre-wave-<N>
-
-### <Feature Name> (BLOCKED)
-- **Blocked by:** <failed feature name>
-- **Transitively blocked by:** <root failed feature name, if chain is longer than one step>
-```
+Compose the report using the template from `references/swarm-report-template.md`. Substitute all angle-bracket placeholders with actual values from the swarm state.
 
 Determine the output path:
 

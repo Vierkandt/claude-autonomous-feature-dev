@@ -324,7 +324,7 @@ ROGUE=$(find .claude/worktrees -name "settings.local.json" 2>/dev/null)
 if [[ -n "$ROGUE" ]]; then
   echo "WARNING: Rogue settings files found in worktrees, removing:"
   echo "$ROGUE"
-  rm -f $ROGUE
+  echo "$ROGUE" | while IFS= read -r f; do rm -f "$f"; done
 fi
 ```
 
@@ -345,6 +345,8 @@ Agent tool parameters:
 tools: ["Edit", "Write", "Glob", "Grep", "Read", "NotebookEdit", "Bash"]
 isolation: "worktree"
 ```
+
+The `isolation` parameter ensures each agent runs in a system-managed worktree — agents must never create worktrees manually.
 
 Prompt template (substitute angle-bracket placeholders with actual values):
 
@@ -475,15 +477,17 @@ After confirming each agent's completion (success or failure):
 
 ```bash
 git worktree prune
-for each failed agent with worktree path AGENT_WORKTREE and branch AGENT_BRANCH:
-  if [ -d "$AGENT_WORKTREE" ]; then
-    git worktree remove --force "$AGENT_WORKTREE"
-  fi
-  # Only delete branch if no PR was created
-  if [ -z "$AGENT_PR_NUMBER" ]; then
-    git branch -D "$AGENT_BRANCH" 2>/dev/null
-  fi
-done
+```
+
+For each failed agent (with worktree path `AGENT_WORKTREE`, branch `AGENT_BRANCH`, and PR number `AGENT_PR_NUMBER`), run:
+
+```bash
+if [ -d "$AGENT_WORKTREE" ]; then
+  git worktree remove --force "$AGENT_WORKTREE"
+fi
+if [ -z "$AGENT_PR_NUMBER" ]; then
+  git branch -D "$AGENT_BRANCH" 2>/dev/null
+fi
 ```
 
 ### 10g. Sequential merge queue
@@ -579,7 +583,7 @@ git worktree prune
 Verify no orphaned worktree directories remain:
 ```bash
 if [ -d ".claude/worktrees" ]; then
-  ORPHANS=$(find .claude/worktrees -maxdepth 1 -type d ! -name worktrees 2>/dev/null | wc -l)
+  ORPHANS=$(find .claude/worktrees -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
   if [ "$ORPHANS" -gt 0 ]; then
     echo "WARNING: $ORPHANS orphaned worktree directories remain in .claude/worktrees/"
   fi

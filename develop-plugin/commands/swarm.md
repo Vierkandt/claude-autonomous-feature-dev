@@ -673,7 +673,34 @@ git commit -m "docs: add swarm report $(date +%Y-%m-%d)"
 
 Update state: `status: "completed"`, `report_path: "$REPORT_FILE"`. Write state file.
 
-## Step 13 — Print terminal summary
+## Step 13 — Generate or update README
+
+Check if `README.md` exists at the project root.
+
+**If README.md does NOT exist:** Generate one from scratch using:
+- Platform name and overview from the plan document
+- Stack info from `docs/project-context.md`
+- Features list from the plan (mark any that failed/blocked with their status)
+- Setup instructions derived from the build/install commands in the context file
+- API overview from `docs/project-contract.md` (endpoints, auth mechanism, error format)
+
+**If README.md DOES exist:** Read it and apply additions:
+- Add or update a Features section with the newly built features
+- Add any new setup steps required by new features
+- Update API documentation if new endpoints were added
+
+Write the README and commit:
+
+```bash
+git add -- README.md
+git commit -m "docs: auto-generate README after swarm run"
+```
+
+The README should be practical and user-facing — not a dump of internal plan/contract details. It should answer: what is this, how do I set it up, how do I run it, what can it do.
+
+If README generation or the commit fails, log a warning and continue to Step 14. Do not mark the swarm as failed — README generation is best-effort.
+
+## Step 14 — Print terminal summary
 
 ```
 Swarm complete — <Platform Name>
@@ -692,8 +719,8 @@ Swarm complete — <Platform Name>
 
 - Input: `$ARGUMENTS` — path to plan file (required)
 - Reads: plan file, `docs/project-context.md`, `docs/project-contract.md`
-- Writes: `docs/workbranches/${PLAN_SLUG}/swarm-state.json`, `docs/project-contract.md` (via wave-transition agent), `docs/wave-learnings.md` (via wave-transition agent), `docs/reports/*.md`
-- Git side effects: creates and pushes git tags, creates and merges PRs (via auto-dev agents), commits report and state file
+- Writes: `docs/workbranches/${PLAN_SLUG}/swarm-state.json`, `docs/project-contract.md` (via wave-transition agent), `docs/wave-learnings.md` (via wave-transition agent), `docs/reports/*.md`, `README.md`
+- Git side effects: creates and pushes git tags, creates and merges PRs (via auto-dev agents), commits report and state file, commits README
 
 ## Error handling
 

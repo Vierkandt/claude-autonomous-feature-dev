@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from textual.widgets import Static
 from datetime import datetime, timezone
 
+from textual.widgets import Static
 from rich.text import Text
 from rich.panel import Panel
 from rich.console import Group

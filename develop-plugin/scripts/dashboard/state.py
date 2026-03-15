@@ -251,15 +251,24 @@ class SwarmStateReader:
             wbs.files_modified = pd.get("files_modified", [])
             wbs.build_status = pd.get("build_status", "not_run")
             wbs.test_status = pd.get("test_status", "not_run")
-            wbs.commits = pd.get("commits", 0)
+            try:
+                wbs.commits = int(pd.get("commits", 0))
+            except (ValueError, TypeError):
+                wbs.commits = 0
             wbs.last_update = pd.get("timestamp", "")
             wbs.progress_errors = pd.get("errors", [])
             # Use sub-feature progress from heartbeat if available
             sf_index = pd.get("sub_feature_index")
             sf_total = pd.get("sub_feature_total")
             if sf_index is not None and sf_total is not None:
-                wbs.sub_features_done = sf_index
-                wbs.sub_features_total = sf_total
+                try:
+                    wbs.sub_features_done = int(sf_index)
+                except (ValueError, TypeError):
+                    wbs.sub_features_done = 0
+                try:
+                    wbs.sub_features_total = int(sf_total)
+                except (ValueError, TypeError):
+                    wbs.sub_features_total = 0
 
         return wbs
 

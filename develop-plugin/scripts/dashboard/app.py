@@ -105,6 +105,7 @@ class SwarmDashboard(App):
         self._refresh_counter = 0
         self._refresh_tick = 0
         self._state_changed = False
+        self._last_refresh_error: str | None = None
         self._dirty = False
 
     def compose(self) -> ComposeResult:
@@ -135,10 +136,9 @@ class SwarmDashboard(App):
             self._fallback_to_polling()
 
     def _fallback_to_polling(self) -> None:
-        """Activate 5-second polling if not already active."""
+        """Mark that we are in polling-only mode (tick timer handles refresh)."""
         if not self._polling_active:
             self._polling_active = True
-            self.set_interval(5.0, self._refresh_state)
 
     async def _watch_files(self) -> None:
         """Watch the workbranch directory for changes, setting dirty flag.
@@ -192,15 +192,15 @@ class SwarmDashboard(App):
         """Re-read state files and update all widgets (no tick/timer logic)."""
         try:
             self._state = self.reader.read()
+            self._last_refresh_error = None
         except FileNotFoundError:
             # Expected during startup before state files exist
             pass
         except Exception as exc:
-            self.notify(
-                f"Dashboard refresh error: {exc}",
-                severity="error",
-                timeout=5,
-            )
+            msg = f"Dashboard refresh error: {exc}"
+            if msg != getattr(self, '_last_refresh_error', None):
+                self._last_refresh_error = msg
+                self.notify(msg, severity="error", timeout=5)
 
         self._rebuild_workbranch_index()
         self._update_widgets()

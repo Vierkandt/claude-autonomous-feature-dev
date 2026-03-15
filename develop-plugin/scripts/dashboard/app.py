@@ -256,8 +256,10 @@ class SwarmDashboard(App):
     def action_show_learnings(self) -> None:
         """Show wave-learnings.md content."""
         learnings_path = self.reader.base_dir / "docs" / "wave-learnings.md"
-        content = self._read_file(learnings_path)
-        if content:
+        content, error = self._read_file(learnings_path)
+        if error:
+            self.notify(error, severity="error", timeout=3)
+        elif content:
             self.notify(f"Learnings:\n{content[:200]}...", timeout=5)
         else:
             self.notify("No wave-learnings.md found", timeout=2)
@@ -265,8 +267,10 @@ class SwarmDashboard(App):
     def action_show_contract(self) -> None:
         """Show project-contract.md content."""
         contract_path = self.reader.base_dir / "docs" / "project-contract.md"
-        content = self._read_file(contract_path)
-        if content:
+        content, error = self._read_file(contract_path)
+        if error:
+            self.notify(error, severity="error", timeout=3)
+        elif content:
             self.notify(f"Contract loaded ({len(content)} chars)", timeout=2)
         else:
             self.notify("No project-contract.md found", timeout=2)
@@ -303,9 +307,13 @@ class SwarmDashboard(App):
         return f"[{self._selected_index + 1}/{len(self._all_workbranches)}] {slug}"
 
     @staticmethod
-    def _read_file(path: Path) -> str:
-        """Read a text file, returning empty string on error."""
+    def _read_file(path: Path) -> tuple[str, str | None]:
+        """Read a text file. Returns (content, error_message)."""
         try:
-            return path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            return ""
+            return path.read_text(encoding="utf-8"), None
+        except FileNotFoundError:
+            return "", None
+        except OSError as exc:
+            return "", f"Cannot read {path.name}: {exc}"
+        except UnicodeDecodeError as exc:
+            return "", f"Encoding error in {path.name}: {exc}"

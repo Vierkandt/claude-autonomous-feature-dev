@@ -31,6 +31,8 @@ class WorkbranchState:
     commits: int = 0
     last_update: str = ""
     progress_errors: list[str] = field(default_factory=list)
+    bug_report_path: str = ""
+    has_bug_report: bool = False
 
 
 @dataclass

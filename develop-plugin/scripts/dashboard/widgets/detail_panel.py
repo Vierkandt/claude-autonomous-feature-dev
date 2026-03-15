@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 from textual.widgets import Static
 from rich.text import Text
 from rich.panel import Panel
@@ -128,9 +131,45 @@ class DetailPanel(Static):
             blocked_text.append(wb.blocked_by, style="red")
             rows.append(blocked_text)
 
+        # Bug report
+        if wb.has_bug_report and wb.bug_report_path:
+            rows.append(Text())
+            report_header = Text()
+            report_header.append("Bug Report:", style="bold yellow")
+            rows.append(report_header)
+
+            report_content = self._read_bug_report(wb.bug_report_path)
+            if report_content:
+                for line in report_content:
+                    rows.append(Text(line, style="yellow"))
+            else:
+                rows.append(Text(f"  (report at {wb.bug_report_path})", style="dim"))
+
         return Panel(
             Group(*rows),
             title=f"Detail \u2014 {wb.slug}",
             border_style="bright_blue",
             padding=(1, 2),
         )
+
+    @staticmethod
+    def _read_bug_report(path: str) -> list[str]:
+        """Read a bug report and extract the Error and Root cause analysis sections."""
+        try:
+            content = Path(path).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return []
+
+        lines: list[str] = []
+        # Extract ## Error and ## Root cause analysis sections
+        for section_name in ("Error", "Root cause analysis"):
+            pattern = rf"^## {re.escape(section_name)}\s*\n(.*?)(?=\n## |\Z)"
+            match = re.search(pattern, content, re.MULTILINE | re.DOTALL)
+            if match:
+                section_lines = match.group(1).strip().splitlines()
+                lines.append(f"  [{section_name}]")
+                for sl in section_lines[:20]:
+                    lines.append(f"  {sl}")
+                lines.append("")
+
+        return lines

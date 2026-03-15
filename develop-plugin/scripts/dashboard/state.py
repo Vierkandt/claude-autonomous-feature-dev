@@ -49,6 +49,7 @@ class SwarmStateReader:
         phase1_reports = self._glob_slugs("*-phase1-report.json", "-phase1-report.json")
         phase1_resolutions = self._glob_slugs("*-phase1-resolution.json", "-phase1-resolution.json")
         done_markers = self._glob_slugs("*-done.json", "-done.json")
+        bug_reports = self._glob_slugs("*-bug-report.md", "-bug-report.md")
         done_data: dict[str, dict] = {}
         for slug in done_markers:
             data = self._read_json(self.wb_dir / f"{slug}-done.json")
@@ -131,6 +132,10 @@ class SwarmStateReader:
                     state,
                     ws,
                 )
+                # Check for bug report
+                if slug in bug_reports:
+                    wbs.has_bug_report = True
+                    wbs.bug_report_path = str(self.wb_dir / f"{slug}-bug-report.md")
                 ws.workbranches[slug] = wbs
 
             # Parse transition results

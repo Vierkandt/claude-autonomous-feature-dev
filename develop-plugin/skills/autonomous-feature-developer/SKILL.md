@@ -100,6 +100,17 @@ PROGRESS_EOF
 
 If the write fails, continue — progress reporting must never block the pipeline.
 
+## Bug Reporting
+
+When any phase encounters an unrecoverable error, write a bug report before the done marker. See `${CLAUDE_SKILL_DIR}/references/bug-report-protocol.md` for the full protocol.
+
+**Swarm invocations:** Write to `docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-bug-report.md`
+**Standalone invocations:** Write to the worktree root as `bug-report.md`
+
+The bug report must include the actual error output (last 50 lines), what was being attempted, which files were involved, and the agent's honest root cause analysis. Write this BEFORE the done marker (Phase 5.5).
+
+If the bug report write fails, continue — it must never block the pipeline.
+
 ---
 
 ## Phase 0 — Setup
@@ -203,6 +214,8 @@ Note: `"merged": false` because `/swarm` handles merging. Status `"merged"` here
 
 On failure (any phase failed to complete):
 
+If the status is "failed", write the bug report first (see Bug Reporting section above), then write the done marker.
+
 ```json
 {
   "workbranch": "<WORKBRANCH_SLUG>",
@@ -214,7 +227,8 @@ On failure (any phase failed to complete):
   "worktree": "<WORKTREE>",
   "review_iterations": <N>,
   "contract_deviations": [],
-  "error": "<one to two sentence summary of what failed and why>"
+  "error": "<one to two sentence summary of what failed and why>",
+  "bug_report": "docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-bug-report.md"
 }
 ```
 

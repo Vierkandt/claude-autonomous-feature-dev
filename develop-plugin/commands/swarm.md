@@ -59,7 +59,7 @@ PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 ```
 All file paths in this command must be absolute, rooted at `$PROJECT_ROOT`. Never use relative paths for state files, workbranch files, or reports.
 
-`PLAN_FILE="$ARGUMENTS"`. If empty, stop with: "Usage: /swarm <path-to-plan-file>. Run /plan or /import-plan first to generate a plan."
+`PLAN_FILE="${PROJECT_ROOT}/${ARGUMENTS}"`. If empty, stop with: "Usage: /swarm <path-to-plan-file>. Run /plan or /import-plan first to generate a plan."
 
 Verify the file exists:
 

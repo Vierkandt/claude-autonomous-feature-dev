@@ -1,1 +1,47 @@
+# Claude Code
 .claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Secrets
+.env
+.env.*
+credentials.json
+*.pem
+*.key
+
+# Swarm runtime artifacts (generated during /swarm runs)
+docs/workbranches/
+docs/reports/
+
+# Worktrees (should never be committed)
+.worktrees/
+worktrees/

@@ -58,6 +58,7 @@ After a swarm completes or halts:
 
 - Read the final report.
 - Group failures by type. Surface patterns (e.g., "3 of 4 failures share the same missing import path").
+- For failed features with bug reports, read the bug report (`docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-bug-report.md`) and include its root cause analysis and suggested fix in your post-run summary. Group similar root causes across multiple failures.
 - For integration reviewer findings, offer bulk operations: "10 of 12 issues are the same naming inconsistency. Want me to fix all at once?"
 - For contract deviations found in the report, explain which are likely intentional improvements vs likely bugs.
 

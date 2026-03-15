@@ -141,7 +141,14 @@ class WavePanel(Static):
                 row.append(f" {sf_done}/{sf_total}", style=phase_color)
             elif wb.status == "failed":
                 row.append("FAILED  ", style="red bold")
-                if wb.error:
+                if wb.pr_number:
+                    row.append(f"PR #{wb.pr_number}  ", style="cyan")
+                if wb.review_iterations:
+                    suffix = "s" if wb.review_iterations != 1 else ""
+                    row.append(f"({wb.review_iterations} review{suffix})  ", style="dim")
+                if wb.has_bug_report:
+                    row.append("[report]", style="yellow")
+                elif wb.error:
                     row.append(wb.error[:40], style="red dim")
             elif wb.status == "blocked":
                 row.append(wb.phase_detail, style="red dim")

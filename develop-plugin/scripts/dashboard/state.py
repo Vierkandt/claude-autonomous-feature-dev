@@ -301,7 +301,9 @@ class SwarmStateReader:
         """Parse a workbranch .md file for name, wave, status, sub-feature count, etc."""
         try:
             content = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError) as exc:
+            import logging
+            logging.warning("Cannot read workbranch file %s: %s", path, exc)
             return {}
 
         info: dict = {}
@@ -407,13 +409,23 @@ class SwarmStateReader:
                 return heading_count
             # Fallback: count bullet points
             return len(re.findall(r"^-\s+", content, re.MULTILINE))
-        except (OSError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError) as exc:
+            import logging
+            logging.warning("Cannot read learnings file: %s", exc)
             return 0
 
     def _read_json(self, path: Path) -> dict | None:
-        """Read and parse a JSON file, returning None on any error."""
+        """Read and parse a JSON file. Returns None if file does not exist."""
         try:
             with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        except FileNotFoundError:
+            return None
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            import logging
+            logging.warning("Corrupt state file %s: %s", path, exc)
+            return None
+        except OSError as exc:
+            import logging
+            logging.warning("Cannot read state file %s: %s", path, exc)
             return None

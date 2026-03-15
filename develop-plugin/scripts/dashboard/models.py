@@ -23,6 +23,14 @@ class WorkbranchState:
     contract_deviations: list[str] = field(default_factory=list)
     error: str = ""  # Non-empty if failed
     blocked_by: str = ""  # Slug of blocking workbranch, if blocked
+    current_action: str = ""
+    files_created: list[str] = field(default_factory=list)
+    files_modified: list[str] = field(default_factory=list)
+    build_status: str = "not_run"
+    test_status: str = "not_run"
+    commits: int = 0
+    last_update: str = ""
+    progress_errors: list[str] = field(default_factory=list)
 
 
 @dataclass

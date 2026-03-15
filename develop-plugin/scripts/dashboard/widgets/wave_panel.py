@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from textual.widgets import Static
 from rich.text import Text
 from rich.panel import Panel
@@ -27,6 +29,34 @@ PHASE_COLORS = {
     "failed": "red",
     "\u2014": "dim",
 }
+
+BUILD_ICONS = {
+    "passing": ("\u2713", "green"),
+    "failing": ("\u2717", "red"),
+    "not_run": ("-", "dim"),
+    "skipped": ("\u2013", "dim"),  # en-dash
+}
+
+
+def _time_since(iso_timestamp: str) -> str:
+    """Return a short human-readable time-since string."""
+    if not iso_timestamp:
+        return ""
+    try:
+        ts = datetime.fromisoformat(iso_timestamp.replace("Z", "+00:00"))
+        delta = datetime.now(timezone.utc) - ts
+        secs = int(delta.total_seconds())
+        if secs < 0:
+            return "0s ago"
+        if secs < 60:
+            return f"{secs}s ago"
+        mins = secs // 60
+        if mins < 60:
+            return f"{mins}m ago"
+        hours = mins // 60
+        return f"{hours}h {mins % 60}m ago"
+    except (ValueError, TypeError):
+        return ""
 
 
 class WavePanel(Static):
@@ -121,10 +151,26 @@ class WavePanel(Static):
             rows.append(row)
 
             # Detail line for in-progress agents
-            if wb.status == "in-progress" and wb.phase_detail:
-                detail = Text()
-                detail.append(f"     \u2514\u2500 {wb.phase_detail}", style="dim")
-                rows.append(detail)
+            if wb.status == "in-progress":
+                detail_text = wb.current_action if wb.current_action else wb.phase_detail
+                if detail_text:
+                    detail = Text()
+                    detail.append(f"     \u2514\u2500 {detail_text}", style="dim")
+
+                    # Append richer stats when progress data is available
+                    if wb.current_action:
+                        file_count = len(wb.files_created) + len(wb.files_modified)
+                        b_icon, b_style = BUILD_ICONS.get(wb.build_status, ("-", "dim"))
+                        detail.append("  ", style="dim")
+                        detail.append(f"files:{file_count}", style="cyan")
+                        detail.append(f" build:{b_icon}", style=b_style)
+                        if wb.commits > 0:
+                            detail.append(f" commits:{wb.commits}", style="magenta")
+                        since = _time_since(wb.last_update)
+                        if since:
+                            detail.append(f" ({since})", style="dim")
+
+                    rows.append(detail)
 
         # Transition summary (for completed waves)
         if wd.transition:

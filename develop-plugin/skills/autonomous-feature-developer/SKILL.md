@@ -81,6 +81,27 @@ If `WORKBRANCH_FILE` is empty, this is a standalone invocation. All swarm-specif
 
 ---
 
+## Progress Reporting (swarm invocation only)
+
+If `WORKBRANCH_FILE` is non-empty, write a progress heartbeat after every significant event. See `${CLAUDE_SKILL_DIR}/references/progress-protocol.md` for the full protocol.
+
+Progress file path: `docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-progress.json`
+
+Write progress using:
+```bash
+cat > "docs/workbranches/$PLAN_SLUG/$WORKBRANCH_SLUG-progress.json" << PROGRESS_EOF
+{
+  "workbranch": "$WORKBRANCH_SLUG",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  ... (fill in current values)
+}
+PROGRESS_EOF
+```
+
+If the write fails, continue — progress reporting must never block the pipeline.
+
+---
+
 ## Phase 0 — Setup
 
 Run the setup script with the feature request as the argument. An alternate context file path may be passed as a second argument — omit it to use the default (`docs/project-context.md`):

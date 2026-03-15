@@ -9,8 +9,6 @@ from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Header, Footer, Static
-from rich.text import Text
-from rich.panel import Panel
 
 from .models import SwarmState
 from .state import SwarmStateReader
@@ -21,54 +19,6 @@ from .widgets.detail_panel import DetailPanel
 
 
 CSS_PATH = Path(__file__).parent / "css" / "dashboard.tcss"
-
-
-class LearningsModal(Static):
-    """Modal showing wave-learnings.md content."""
-
-    def __init__(self, content: str = "", **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._content = content
-
-    def render(self):
-        return Panel(
-            Text(self._content or "No learnings found.", style="white"),
-            title="Wave Learnings",
-            border_style="blue",
-            padding=(1, 2),
-        )
-
-
-class ContractModal(Static):
-    """Modal showing project-contract.md content."""
-
-    def __init__(self, content: str = "", **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._content = content
-
-    def render(self):
-        return Panel(
-            Text(self._content or "No contract found.", style="white"),
-            title="Project Contract",
-            border_style="cyan",
-            padding=(1, 2),
-        )
-
-
-class ErrorModal(Static):
-    """Modal showing error details for a failed workbranch."""
-
-    def __init__(self, content: str = "", **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._content = content
-
-    def render(self):
-        return Panel(
-            Text(self._content or "No error details.", style="red"),
-            title="Error Detail",
-            border_style="red",
-            padding=(1, 2),
-        )
 
 
 class SwarmDashboard(App):

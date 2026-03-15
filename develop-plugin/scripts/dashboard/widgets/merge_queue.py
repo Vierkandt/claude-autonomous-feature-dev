@@ -6,7 +6,7 @@ from textual.widgets import Static
 from rich.text import Text
 from rich.panel import Panel
 
-from ..models import SwarmState, WaveState
+from ..models import SwarmState
 
 
 class MergeQueueBar(Static):
@@ -55,7 +55,7 @@ class MergeQueueBar(Static):
             in_progress_count = sum(1 for wb in wbs.values() if wb.status == "in-progress")
 
             if merged_count > 0 and done_count < total:
-                # Some merged, some still going — queue is active
+                # Some merged, not all resolved (merged+failed < total) — queue is active
                 next_to_merge = None
                 for slug in current_wave.merge_order:
                     wb = wbs.get(slug)
@@ -66,7 +66,7 @@ class MergeQueueBar(Static):
                 if next_to_merge:
                     t.append("active", style="yellow bold")
                     t.append("  \u2502  ", style="dim")
-                    t.append(f"Merging: ", style="bold")
+                    t.append("Next: ", style="bold")
                     t.append(next_to_merge.name, style="yellow")
                     if next_to_merge.pr_number:
                         t.append(f" (PR {next_to_merge.pr_number})", style="cyan")

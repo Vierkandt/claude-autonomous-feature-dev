@@ -297,7 +297,7 @@ class SwarmDashboard(App):
     def action_open_pr(self) -> None:
         """Open the selected workbranch's PR in the browser."""
         wb = self._get_selected_workbranch()
-        if wb and wb.pr_url:
+        if wb and wb.pr_url and wb.pr_url.startswith(("https://", "http://")):
             webbrowser.open(wb.pr_url)
             self.notify(f"Opening PR: {wb.pr_url}", timeout=2)
         else:

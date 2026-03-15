@@ -288,12 +288,12 @@ class SwarmStateReader:
         return slugs
 
     def _find_workbranch_md_files(self) -> list[Path]:
-        """Find all workbranch .md files (not JSON, not swarm-state)."""
+        """Find all workbranch .md files, excluding bug reports."""
         results = []
         if not self.wb_dir.exists():
             return results
         for path in self.wb_dir.glob("*.md"):
-            if path.name != "swarm-state.json":
+            if not path.name.endswith("-bug-report.md"):
                 results.append(path)
         return results
 

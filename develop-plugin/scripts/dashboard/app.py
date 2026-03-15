@@ -101,6 +101,7 @@ class SwarmDashboard(App):
         self._all_workbranches: list[tuple[int, str]] = []  # (wave_num, slug)
         self._watcher_task: asyncio.Task | None = None
         self._use_watchfiles = False
+        self._polling_active = False
         self._refresh_counter = 0
         self._refresh_tick = 0
         self._state_changed = False
@@ -130,21 +131,40 @@ class SwarmDashboard(App):
             self._watcher_task = asyncio.ensure_future(self._watch_files())
         except ImportError:
             self._use_watchfiles = False
+            self.notify("watchfiles not installed, using 5s polling", timeout=4)
+            self._fallback_to_polling()
+
+    def _fallback_to_polling(self) -> None:
+        """Activate 5-second polling if not already active."""
+        if not self._polling_active:
+            self._polling_active = True
+            self.set_interval(5.0, self._refresh_state)
 
     async def _watch_files(self) -> None:
-        """Watch the workbranch directory for changes, setting dirty flag."""
+        """Watch the workbranch directory for changes, setting dirty flag.
+
+        If the watcher fails for any reason other than cancellation, the
+        dashboard falls back to 5-second polling and notifies the user.
+        """
         try:
             from watchfiles import awatch
 
             watch_path = self.reader.watch_dir
             if not Path(watch_path).exists():
+                self._fallback_to_polling()
                 return
 
             async for _changes in awatch(watch_path):
                 self._dirty = True
-        except Exception:
-            # Watcher failed; polling via tick timer still works
-            pass
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            self.notify(
+                f"File watcher failed ({exc}), falling back to polling",
+                severity="warning",
+                timeout=5,
+            )
+            self._fallback_to_polling()
 
     def _tick_refresh_timer(self) -> None:
         """Sole timing driver: 1-second tick, refresh every 5 ticks or on dirty."""
@@ -172,9 +192,15 @@ class SwarmDashboard(App):
         """Re-read state files and update all widgets (no tick/timer logic)."""
         try:
             self._state = self.reader.read()
-        except Exception:
-            # Keep existing state on read error
+        except FileNotFoundError:
+            # Expected during startup before state files exist
             pass
+        except Exception as exc:
+            self.notify(
+                f"Dashboard refresh error: {exc}",
+                severity="error",
+                timeout=5,
+            )
 
         self._rebuild_workbranch_index()
         self._update_widgets()
@@ -215,8 +241,10 @@ class SwarmDashboard(App):
         detail = self.query_one("#detail-panel", DetailPanel)
         if detail.is_visible and self._all_workbranches:
             wave_num, slug = self._all_workbranches[self._selected_index]
-            wb = self._state.waves[wave_num].workbranches.get(slug)
-            detail.update_workbranch(wb)
+            wave = self._state.waves.get(wave_num)
+            if wave:
+                wb = wave.workbranches.get(slug)
+                detail.update_workbranch(wb)
 
     def _get_selected_workbranch(self):
         """Get the currently selected workbranch state, or None."""
@@ -317,11 +345,11 @@ class SwarmDashboard(App):
         if not self._all_workbranches:
             return ""
         wave_num, slug = self._all_workbranches[self._selected_index]
-        wb = self._state.waves.get(wave_num, SwarmState()).workbranches if wave_num in self._state.waves else {}
-        if isinstance(wb, dict):
-            wbs = wb.get(slug)
-            if wbs:
-                return f"[{self._selected_index + 1}/{len(self._all_workbranches)}] {wbs.name}"
+        wave = self._state.waves.get(wave_num)
+        if wave:
+            wb = wave.workbranches.get(slug)
+            if wb:
+                return f"[{self._selected_index + 1}/{len(self._all_workbranches)}] {wb.name}"
         return f"[{self._selected_index + 1}/{len(self._all_workbranches)}] {slug}"
 
     @staticmethod

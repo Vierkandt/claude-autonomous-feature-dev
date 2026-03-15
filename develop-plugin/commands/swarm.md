@@ -301,6 +301,33 @@ Print wave start banner:
 ═══════════════════════════════════════════
 ```
 
+### 10c.1 Pre-wave worktree checks
+
+Before dispatching any agent for this wave, verify the environment:
+
+1. Confirm the orchestrator is NOT inside a worktree:
+```bash
+if [[ "$PWD" == *".claude/worktrees"* ]]; then
+  echo "ERROR: Orchestrator is inside a worktree at $PWD — aborting wave"
+  # Halt the swarm
+fi
+```
+
+2. Prune stale worktrees:
+```bash
+git worktree prune
+```
+
+3. Check for rogue settings files in worktree directories:
+```bash
+ROGUE=$(find .claude/worktrees -name "settings.local.json" 2>/dev/null)
+if [[ -n "$ROGUE" ]]; then
+  echo "WARNING: Rogue settings files found in worktrees, removing:"
+  echo "$ROGUE"
+  rm -f $ROGUE
+fi
+```
+
 ### 10d. Dispatch auto-dev agents (parallel)
 
 For each workbranch in the wave's set, invoke one Agent tool call. All agents are dispatched concurrently — do not wait for agent N to finish before dispatching agent N+1.
@@ -316,6 +343,7 @@ Agent tool parameters:
 
 ```
 tools: ["Edit", "Write", "Glob", "Grep", "Read", "NotebookEdit", "Bash"]
+isolation: "worktree"
 ```
 
 Prompt template (substitute angle-bracket placeholders with actual values):
@@ -437,6 +465,27 @@ or:
   ✗ <workbranch-name> — failed: <error summary>
 ```
 
+### 10f.1 Post-agent worktree cleanup
+
+After confirming each agent's completion (success or failure):
+
+- Run `git worktree prune` to clean up any auto-removed worktrees
+- For failed agents: if the worktree directory still exists, remove it with `git worktree remove --force <path>`
+- Delete the agent's feature branch if the agent failed and no PR was created: `git branch -D <branch-name> 2>/dev/null`
+
+```bash
+git worktree prune
+for each failed agent with worktree path AGENT_WORKTREE and branch AGENT_BRANCH:
+  if [ -d "$AGENT_WORKTREE" ]; then
+    git worktree remove --force "$AGENT_WORKTREE"
+  fi
+  # Only delete branch if no PR was created
+  if [ -z "$AGENT_PR_NUMBER" ]; then
+    git branch -D "$AGENT_BRANCH" 2>/dev/null
+  fi
+done
+```
+
 ### 10g. Sequential merge queue
 
 Verify working directory before proceeding:
@@ -519,6 +568,23 @@ git push origin "swarm/${PLAN_SLUG}/post-wave-${N}"
 ```
 
 Append the tag to the state file's `tags` array.
+
+### 10h.1 Post-wave worktree cleanup
+
+Run post-wave worktree cleanup:
+```bash
+git worktree prune
+```
+
+Verify no orphaned worktree directories remain:
+```bash
+if [ -d ".claude/worktrees" ]; then
+  ORPHANS=$(find .claude/worktrees -maxdepth 1 -type d ! -name worktrees 2>/dev/null | wc -l)
+  if [ "$ORPHANS" -gt 0 ]; then
+    echo "WARNING: $ORPHANS orphaned worktree directories remain in .claude/worktrees/"
+  fi
+fi
+```
 
 ### 10i. Run wave-transition agent
 

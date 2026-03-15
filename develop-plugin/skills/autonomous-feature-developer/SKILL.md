@@ -113,6 +113,21 @@ If the bug report write fails, continue — it must never block the pipeline.
 
 ---
 
+## Worktree Rules
+
+You are running inside an isolated worktree managed by the swarm system. These rules are mandatory:
+
+- **Do NOT** run `git worktree add` — you are already in a worktree
+- **Do NOT** create directories named `.worktrees/` or `worktrees/`
+- **Do NOT** write to or create `.claude/settings.local.json` — this overrides permissions for all agents
+- **Do NOT** create nested worktrees (worktree inside a worktree)
+- If `.git` is a file (not a directory), you are in a worktree — work from your current directory
+- All your work happens in the current working directory. Do not attempt to `cd` to the project root or another worktree.
+
+If you detect that you are about to write `.claude/settings.local.json`, STOP. This file controls permissions for the entire session and must not be modified by feature agents.
+
+---
+
 ## Phase 0 — Setup
 
 Run the setup script with the feature request as the argument. An alternate context file path may be passed as a second argument — omit it to use the default (`docs/project-context.md`):

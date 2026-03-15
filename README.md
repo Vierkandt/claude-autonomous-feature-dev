@@ -30,18 +30,59 @@ Brainstorm a platform, decompose it into features, and build them all in paralle
 /swarm docs/plans/my-saas-platform-plan.md
 ```
 
+### Live dashboard — `/dashboard`
+
+Monitor a running swarm with a real-time TUI dashboard (requires [Textual](https://textual.textualize.io/)):
+
+- Wave progress, workbranch status, and phase tracking
+- Merge queue visualization
+- Agent progress heartbeats with sub-feature completion
+- Detail panel with PR links, error diagnostics, and bug reports
+- Auto-refresh via file watching (falls back to 5s polling)
+
+```
+/dashboard my-platform
+```
+
 ### Other commands
 
 | Command | Purpose |
 |---|---|
 | `/init` | Set up a project for auto-dev (permissions, context file, directories) |
 | `/import-plan` | Parse a brainstorm export from Claude.ai into a structured plan + contract |
+| `/dashboard` | Launch the real-time swarm monitoring TUI |
+
+## Features
+
+### Swarm safety
+
+The swarm orchestrator includes guardrails to prevent agent misbehavior:
+
+- **Worktree isolation** — feature agents run in system-managed worktrees via `isolation: "worktree"`, preventing rogue worktree creation
+- **Drift guards** — the orchestrator verifies its working directory before each major step, auto-correcting if it drifts
+- **Pre-flight checks** — stale worktrees are pruned and rogue settings files are removed before each wave
+- **Post-agent cleanup** — failed worktrees and orphaned branches are cleaned up automatically
+- **Absolute paths** — all state file operations use absolute paths rooted at `$PROJECT_ROOT`
+
+### Agent progress reporting
+
+Feature agents write progress heartbeats during execution, enabling the dashboard to show:
+
+- Current phase and action
+- Sub-feature completion (e.g., 3/7 done)
+- Files created/modified, commit count
+- Build and test status
+
+### Bug reports
+
+When a feature agent encounters an unrecoverable error, it writes a structured bug report before exiting. Reports include the error output, what was attempted, which files were involved, and the agent's root cause analysis.
 
 ## Prerequisites
 
 - **Git** with worktree support
 - **`gh`** (GitHub) or **`glab`** (GitLab) CLI, authenticated
 - **Claude Code** with agent teams support
+- **Python 3.10+** with `textual` and `watchfiles` (optional, for `/dashboard`)
 
 ## Installation
 
@@ -102,6 +143,16 @@ Then launch the swarm:
 ```
 
 Walk away. The swarm handles everything: decomposition, parallel agents, wave ordering, merge queue, post-wave reviews, integration review, and a final report at `docs/reports/`.
+
+### Monitor with the dashboard
+
+In a separate terminal while a swarm is running:
+
+```
+/dashboard
+```
+
+The dashboard auto-detects the active plan. Press `r` to force refresh, `d` to toggle the detail panel, arrow keys to navigate workbranches, and `Enter` to open a PR in the browser.
 
 ### Import from Claude.ai
 

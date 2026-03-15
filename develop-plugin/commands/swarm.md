@@ -593,7 +593,7 @@ Update state: `status: "halted"`, `halt_reason: "<description>"`. Write state fi
 
 Otherwise: log any failures and newly blocked features as warnings and continue to wave N+1.
 
-If continuing to the next wave, print:
+Print halt check result:
 ```
   Halt check: N% remaining features blocked → continuing
   Halt check: N% remaining features blocked → HALTED

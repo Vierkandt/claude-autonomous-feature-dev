@@ -53,7 +53,13 @@ If the output is `AGENT_TEAMS=1`, proceed to Step 2.
 
 ## Step 2 — Resolve plan file
 
-`PLAN_FILE="$ARGUMENTS"`. If empty, stop with: "Usage: /swarm <path-to-plan-file>. Run /plan or /import-plan first to generate a plan."
+Capture the project root as an absolute anchor for all subsequent operations:
+```bash
+PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+```
+All file paths in this command must be absolute, rooted at `$PROJECT_ROOT`. Never use relative paths for state files, workbranch files, or reports.
+
+`PLAN_FILE="${PROJECT_ROOT}/${ARGUMENTS}"`. If empty, stop with: "Usage: /swarm <path-to-plan-file>. Run /plan or /import-plan first to generate a plan."
 
 Verify the file exists:
 
@@ -72,10 +78,12 @@ PLAN_SLUG=$(basename "$PLAN_FILE" | sed 's/-plan\.md$//' \
   | cut -c1-50)
 ```
 
+**CRITICAL CONSTRAINT:** The /swarm orchestrator must NEVER change its working directory into a worktree. All worktree operations happen exclusively inside dispatched auto-dev agents. The orchestrator stays at `$PROJECT_ROOT` at all times. Use absolute paths for every file operation: `"${PROJECT_ROOT}/docs/workbranches/..."` not `"docs/workbranches/..."`.
+
 ## Step 3 — Check for existing swarm state
 
 ```bash
-STATE_FILE="docs/workbranches/${PLAN_SLUG}/swarm-state.json"
+STATE_FILE="${PROJECT_ROOT}/docs/workbranches/${PLAN_SLUG}/swarm-state.json"
 ```
 
 If `$STATE_FILE` exists, read it. Extract `status` and `current_wave`.
@@ -104,7 +112,7 @@ Validations (stop on any failure, listing all errors found):
 ## Step 5 — Validate contract
 
 ```bash
-[ -f "docs/project-contract.md" ] || {
+[ -f "${PROJECT_ROOT}/docs/project-contract.md" ] || {
   echo "ERROR: docs/project-contract.md is missing."
   echo "Run /plan or /import-plan to generate it."
   exit 1
@@ -128,7 +136,7 @@ These checks are heuristic. If a check is ambiguous, log a warning and continue 
 ## Step 6 — Validate project context
 
 ```bash
-[ -f "docs/project-context.md" ] || {
+[ -f "${PROJECT_ROOT}/docs/project-context.md" ] || {
   echo "ERROR: docs/project-context.md is missing. Run /init first."
   exit 1
 }
@@ -145,7 +153,7 @@ Read the context file. Extract and store:
 ## Step 7 — Staleness check and decomposition
 
 ```bash
-WB_DIR="docs/workbranches/${PLAN_SLUG}"
+WB_DIR="${PROJECT_ROOT}/docs/workbranches/${PLAN_SLUG}"
 WB_COUNT=$(find "$WB_DIR" -name "*.md" -not -name "swarm-state.json" 2>/dev/null | wc -l)
 ```
 
@@ -195,7 +203,7 @@ IS_EXISTING_PROJECT=<"true" or "false">
 
 ## Instructions
 Follow the decomposer agent instructions in full.
-Write workbranch files to: docs/workbranches/<PLAN_SLUG>/
+Write workbranch files to: ${PROJECT_ROOT}/docs/workbranches/<PLAN_SLUG>/
 Print the decomposition summary when done.
 ```
 
@@ -243,10 +251,10 @@ To monitor this swarm in real-time, open a second terminal and run:
 If not resuming:
 
 ```bash
-mkdir -p "docs/workbranches/${PLAN_SLUG}"
+mkdir -p "${PROJECT_ROOT}/docs/workbranches/${PLAN_SLUG}"
 ```
 
-Write `docs/workbranches/${PLAN_SLUG}/swarm-state.json` with initial state:
+Write `${PROJECT_ROOT}/docs/workbranches/${PLAN_SLUG}/swarm-state.json` with initial state:
 
 ```json
 {
@@ -335,8 +343,8 @@ Invoke the autonomous-feature-developer skill. Execute all phases in order:
 
 Phase 0: Pass the workbranch's Description as the feature request to setup.sh.
 Phase 1: Use the Sub-features above as your Implementation Order seed.
-         Read docs/project-contract.md (required).
-         Read docs/wave-learnings.md if it exists.
+         Read ${PROJECT_ROOT}/docs/project-contract.md (required).
+         Read ${PROJECT_ROOT}/docs/wave-learnings.md if it exists.
          After committing your plan, perform the Phase 1 sync point protocol.
          See references/phase-1-architecture.md Step 5a.
 Phase 2: Implement according to the plan. Follow the contract for all shared concerns.
@@ -349,9 +357,14 @@ Phase 5: Run cleanup.
 
 ### 10e. Phase 1 sync point
 
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
+
 After dispatching all agents for the wave, poll for Phase 1 reports.
 
-Poll every 60 seconds for all `<workbranch-slug>-phase1-report.json` files in `docs/workbranches/${PLAN_SLUG}/`.
+Poll every 60 seconds for all `<workbranch-slug>-phase1-report.json` files in `${PROJECT_ROOT}/docs/workbranches/${PLAN_SLUG}/`.
 
 Timeout: 20 minutes. Any workbranch that has not produced a report by then is marked failed: "Phase 1 report timeout."
 
@@ -413,7 +426,7 @@ When all reports are in, print:
 
 ### 10f. Wait for all agents to finish Phase 2–5
 
-Poll every 60 seconds for `<workbranch-slug>-done.json` files in `docs/workbranches/${PLAN_SLUG}/`. If an agent has produced no done marker for more than 60 minutes, mark it as failed with reason "agent timeout (60 min)."
+Poll every 60 seconds for `<workbranch-slug>-done.json` files in `${PROJECT_ROOT}/docs/workbranches/${PLAN_SLUG}/`. If an agent has produced no done marker for more than 60 minutes, mark it as failed with reason "agent timeout (60 min)."
 
 As each done marker is detected, print:
 ```
@@ -425,6 +438,11 @@ or:
 ```
 
 ### 10g. Sequential merge queue
+
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
 
 After all done markers for a wave are present (or the 60-minute agent timeout is reached), run the sequential merge queue.
 
@@ -490,6 +508,11 @@ Print merge queue progress for each workbranch:
 
 ### 10h. Tag post-wave
 
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
+
 ```bash
 git tag "swarm/${PLAN_SLUG}/post-wave-${N}"
 git push origin "swarm/${PLAN_SLUG}/post-wave-${N}"
@@ -498,6 +521,11 @@ git push origin "swarm/${PLAN_SLUG}/post-wave-${N}"
 Append the tag to the state file's `tags` array.
 
 ### 10i. Run wave-transition agent
+
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
 
 Invoke the wave-transition agent via the Agent tool.
 
@@ -517,8 +545,8 @@ WAVE_NUMBER=<N>
 PLAN_SLUG=<PLAN_SLUG>
 PRE_WAVE_TAG=swarm/<PLAN_SLUG>/pre-wave-<N>
 POST_WAVE_TAG=swarm/<PLAN_SLUG>/post-wave-<N>
-CONTRACT_FILE=docs/project-contract.md
-LEARNINGS_FILE=docs/wave-learnings.md
+CONTRACT_FILE=${PROJECT_ROOT}/docs/project-contract.md
+LEARNINGS_FILE=${PROJECT_ROOT}/docs/wave-learnings.md
 BUILD_CMD=<BUILD_CMD>
 TEST_CMD=<TEST_CMD or empty string>
 LINT_CMD=<LINT_CMD or empty string>
@@ -559,6 +587,11 @@ Print wave transition summary:
 If the completion block is not found, log: `WARN: wave-transition did not produce WAVE_TRANSITION_COMPLETE signal for wave N` and continue. The swarm does not halt on wave-transition failure.
 
 ### 10j. Update swarm state
+
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
 
 Add N to `waves_completed`. Set `wave_results[N]` to a map of each workbranch slug to its status (from its done marker or merge queue result). Increment `current_wave` to N+1. Refresh `updated_at`. Write the state file.
 
@@ -602,6 +635,11 @@ Print halt check result:
 
 ## Step 11 — Final integration review
 
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
+
 After all waves complete, invoke the `integration-reviewer` skill via Agent tool.
 
 Agent tool parameters:
@@ -617,8 +655,8 @@ You are the integration reviewer. Run a final review of the fully merged codebas
 
 ## Parameters
 PLAN_FILE=<PLAN_FILE_PATH>
-CONTRACT_FILE=docs/project-contract.md
-LEARNINGS_FILE=docs/wave-learnings.md
+CONTRACT_FILE=${PROJECT_ROOT}/docs/project-contract.md
+LEARNINGS_FILE=${PROJECT_ROOT}/docs/wave-learnings.md
 BASE_BRANCH=<BASE_BRANCH>
 BUILD_CMD=<BUILD_CMD>
 TEST_CMD=<TEST_CMD or empty string>
@@ -642,6 +680,11 @@ Wait for it to complete. Extract `INTEGRATION_REVIEW_PR_URL=<url>` from its outp
 Update state: set `integration_pr_url` to the extracted value.
 
 ## Step 12 — Write final report
+
+Verify working directory before proceeding:
+```bash
+[ "$(pwd)" = "$PROJECT_ROOT" ] || { echo "WARNING: orchestrator drifted to $(pwd), returning to $PROJECT_ROOT" >&2; cd "$PROJECT_ROOT"; }
+```
 
 Compose the report in this format:
 
@@ -712,15 +755,15 @@ Determine the output path:
 
 ```bash
 REPORT_DATE=$(date +%Y-%m-%d)
-REPORT_FILE="docs/reports/swarm-${REPORT_DATE}-report.md"
+REPORT_FILE="${PROJECT_ROOT}/docs/reports/swarm-${REPORT_DATE}-report.md"
 # If file exists, add time suffix to avoid collision
-[ -f "$REPORT_FILE" ] && REPORT_FILE="docs/reports/swarm-${REPORT_DATE}-$(date +%H-%M)-report.md"
+[ -f "$REPORT_FILE" ] && REPORT_FILE="${PROJECT_ROOT}/docs/reports/swarm-${REPORT_DATE}-$(date +%H-%M)-report.md"
 ```
 
 Write the report. Then commit it along with the final state:
 
 ```bash
-git add -- "$REPORT_FILE" "docs/workbranches/${PLAN_SLUG}/swarm-state.json"
+git add -- "$REPORT_FILE" "${PROJECT_ROOT}/docs/workbranches/${PLAN_SLUG}/swarm-state.json"
 git commit -m "docs: add swarm report $(date +%Y-%m-%d)"
 ```
 
@@ -772,7 +815,7 @@ Swarm complete — <Platform Name>
 
 - Input: `$ARGUMENTS` — path to plan file (required)
 - Reads: plan file, `docs/project-context.md`, `docs/project-contract.md`
-- Writes: `docs/workbranches/${PLAN_SLUG}/swarm-state.json`, `docs/project-contract.md` (via wave-transition agent), `docs/wave-learnings.md` (via wave-transition agent), `docs/reports/*.md`, `README.md`
+- Writes: `${PROJECT_ROOT}/docs/workbranches/${PLAN_SLUG}/swarm-state.json`, `${PROJECT_ROOT}/docs/project-contract.md` (via wave-transition agent), `${PROJECT_ROOT}/docs/wave-learnings.md` (via wave-transition agent), `${PROJECT_ROOT}/docs/reports/*.md`, `README.md`
 - Git side effects: creates and pushes git tags, creates and merges PRs (via auto-dev agents), commits report and state file, commits README
 
 ## Error handling

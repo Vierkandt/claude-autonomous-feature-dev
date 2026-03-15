@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# NOTE: This script cd's into the worktree internally. It is always invoked
+# with `bash` (not `source`), so the cd does not affect the caller's working directory.
+#
 # swarm-rebase-merge.sh — Rebase a feature branch onto the updated base branch
 # and merge its PR. Used by the /swarm sequential merge queue.
 #

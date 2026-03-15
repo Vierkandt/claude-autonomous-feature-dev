@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import glob
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -302,7 +303,6 @@ class SwarmStateReader:
         try:
             content = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as exc:
-            import logging
             logging.warning("Cannot read workbranch file %s: %s", path, exc)
             return {}
 
@@ -410,7 +410,6 @@ class SwarmStateReader:
             # Fallback: count bullet points
             return len(re.findall(r"^-\s+", content, re.MULTILINE))
         except (OSError, UnicodeDecodeError) as exc:
-            import logging
             logging.warning("Cannot read learnings file: %s", exc)
             return 0
 
@@ -422,10 +421,8 @@ class SwarmStateReader:
         except FileNotFoundError:
             return None
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-            import logging
             logging.warning("Corrupt state file %s: %s", path, exc)
             return None
         except OSError as exc:
-            import logging
             logging.warning("Cannot read state file %s: %s", path, exc)
             return None

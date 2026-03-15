@@ -232,7 +232,16 @@ class SwarmDashboard(App):
 
     def action_refresh(self) -> None:
         """Force refresh state."""
+        old_state = self._state
         self._refresh_state()
+        self._state_changed = old_state != self._state
+        self._refresh_tick = 0
+        try:
+            header = self.query_one("#swarm-header", SwarmHeader)
+            header.update_tick(0, self._state_changed)
+        except Exception:
+            pass
+        self._state_changed = False
         self.notify("Refreshed swarm state", timeout=2)
 
     def action_toggle_detail(self) -> None:

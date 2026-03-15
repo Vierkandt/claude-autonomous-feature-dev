@@ -102,6 +102,9 @@ class SwarmDashboard(App):
         self._watcher_task: asyncio.Task | None = None
         self._use_watchfiles = False
         self._refresh_counter = 0
+        self._refresh_tick = 0
+        self._state_changed = False
+        self._dirty = False
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -117,36 +120,56 @@ class SwarmDashboard(App):
         """Initialize: read state and start file watcher."""
         self._refresh_state()
         self._start_watcher()
+        self.set_interval(1.0, self._tick_refresh_timer)
 
     def _start_watcher(self) -> None:
-        """Start file watcher using watchfiles or polling fallback."""
+        """Start file watcher using watchfiles (optional, sets dirty flag)."""
         try:
             from watchfiles import awatch  # noqa: F401
             self._use_watchfiles = True
             self._watcher_task = asyncio.ensure_future(self._watch_files())
         except ImportError:
             self._use_watchfiles = False
-            self.set_interval(5.0, self._refresh_state)
 
     async def _watch_files(self) -> None:
-        """Watch the workbranch directory for changes using watchfiles."""
+        """Watch the workbranch directory for changes, setting dirty flag."""
         try:
             from watchfiles import awatch
 
             watch_path = self.reader.watch_dir
             if not Path(watch_path).exists():
-                # Fall back to polling if directory doesn't exist yet
-                self.set_interval(5.0, self._refresh_state)
                 return
 
             async for _changes in awatch(watch_path):
-                self._refresh_state()
+                self._dirty = True
         except Exception:
-            # Fall back to polling on any error
-            self.set_interval(5.0, self._refresh_state)
+            # Watcher failed; polling via tick timer still works
+            pass
+
+    def _tick_refresh_timer(self) -> None:
+        """Sole timing driver: 1-second tick, refresh every 5 ticks or on dirty."""
+        self._refresh_tick = (self._refresh_tick + 1) % 5
+        if self._refresh_tick == 0 or self._dirty:
+            self._dirty = False
+            old_state = self._state
+            self._refresh_state()
+            self._state_changed = old_state != self._state
+            try:
+                header = self.query_one("#swarm-header", SwarmHeader)
+                header.update_tick(0, self._state_changed)
+            except Exception:
+                pass
+            self._state_changed = False
+            self._refresh_tick = 0  # Reset cycle after early dirty refresh
+        else:
+            try:
+                header = self.query_one("#swarm-header", SwarmHeader)
+                header.update_tick(self._refresh_tick, False)
+            except Exception:
+                pass
 
     def _refresh_state(self) -> None:
-        """Re-read state files and update all widgets."""
+        """Re-read state files and update all widgets (no tick/timer logic)."""
         try:
             self._state = self.reader.read()
         except Exception:
@@ -209,7 +232,16 @@ class SwarmDashboard(App):
 
     def action_refresh(self) -> None:
         """Force refresh state."""
+        old_state = self._state
         self._refresh_state()
+        self._state_changed = old_state != self._state
+        self._refresh_tick = 0
+        try:
+            header = self.query_one("#swarm-header", SwarmHeader)
+            header.update_tick(0, self._state_changed)
+        except Exception:
+            pass
+        self._state_changed = False
         self.notify("Refreshed swarm state", timeout=2)
 
     def action_toggle_detail(self) -> None:
